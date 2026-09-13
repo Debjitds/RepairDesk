@@ -1,0 +1,440 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Settings - RepairDesk</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed-variant": "#832700",
+                        "tertiary-fixed-dim": "#b9d300",
+                        "outline-variant": "#c4c7c7",
+                        "surface-container-high": "#ede8de",
+                        "secondary": "#ab3600",
+                        "on-background": "#1d1c16",
+                        "on-secondary-fixed": "#390c00",
+                        "surface-container": "#f2ede3",
+                        "on-tertiary-fixed": "#191e00",
+                        "inverse-primary": "#c8c6c5",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed-dim": "#c8c6c5",
+                        "on-primary-fixed-variant": "#474746",
+                        "on-tertiary-fixed-variant": "#414c00",
+                        "on-secondary-container": "#551600",
+                        "on-surface": "#1d1c16",
+                        "on-primary": "#ffffff",
+                        "primary-container": "#1c1b1b",
+                        "secondary-fixed": "#ffdbcf",
+                        "secondary-container": "#fe5e1e",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#f8f3e9",
+                        "inverse-on-surface": "#f5f0e6",
+                        "surface-container-highest": "#e7e2d8",
+                        "inverse-surface": "#32302a",
+                        "on-primary-container": "#858383",
+                        "error": "#ba1a1a",
+                        "tertiary": "#000000",
+                        "on-tertiary-container": "#7a8c00",
+                        "surface-bright": "#fef9ef",
+                        "secondary-fixed-dim": "#ffb59c",
+                        "on-error-container": "#93000a",
+                        "surface-tint": "#5f5e5e",
+                        "outline": "#747878",
+                        "on-primary-fixed": "#1c1b1b",
+                        "primary": "#000000",
+                        "on-surface-variant": "#444748",
+                        "surface-dim": "#dedad0",
+                        "tertiary-container": "#191e00",
+                        "primary-fixed": "#e5e2e1",
+                        "background": "#fef9ef",
+                        "surface-container-lowest": "#ffffff",
+                        "surface": "#fef9ef",
+                        "tertiary-fixed": "#d3f000",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#e7e2d8",
+                        
+                        // Custom Accents
+                        "signal-orange": "#ff5722",
+                        "electric-yellow": "#eaff00",
+                        "warm-cream": "#f2ede3",
+                        "near-black": "#1A1A1A"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "48px",
+                        "container-max": "1280px",
+                        "stack-md": "16px",
+                        "base": "8px",
+                        "stack-lg": "32px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Space Grotesk"],
+                        "headline-lg-mobile": ["Space Grotesk"],
+                        "headline-md": ["Space Grotesk"],
+                        "display-lg": ["Space Grotesk"],
+                        "label-caps": ["Space Grotesk"],
+                        "mono-label": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "headline-md": ["32px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "display-lg": ["72px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+                        "label-caps": ["14px", { "lineHeight": "1.2", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "mono-label": ["12px", { "lineHeight": "1.0", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .neo-brutalist-border { border: 3px solid #000; }
+        .neo-brutalist-border-b { border-bottom: 3px solid #000; }
+        .neo-brutalist-border-r { border-right: 3px solid #000; }
+        .neo-brutalist-border-t { border-top: 3px solid #000; }
+        .neo-brutalist-shadow { box-shadow: 4px 4px 0px 0px rgba(26, 26, 26, 1); }
+        .neo-brutalist-shadow-hover:hover { 
+            box-shadow: 0px 0px 0px 0px rgba(26, 26, 26, 1); 
+            transform: translate(4px, 4px);
+        }
+        .neo-brutalist-shadow-active:active {
+            box-shadow: 0px 0px 0px 0px rgba(26, 26, 26, 1); 
+            transform: translate(4px, 4px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen flex" style="background-image: radial-gradient(#1A1A1A 1px, transparent 0); background-size: 24px 24px;">
+<!-- SideNavBar -->
+<aside class="bg-surface dark:bg-surface text-primary dark:text-on-surface fixed top-0 left-0 h-screen w-64 z-50 border-r-[3px] border-tertiary dark:border-outline flex flex-col justify-between min-h-screen" style="bottom: 0px;">
+<div class="p-stack-md">
+<div class="font-headline-md text-[28px] font-black tracking-tighter text-primary dark:text-on-surface mb-stack-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-[32px]">precision_manufacturing</span>
+            RepairDesk
+        </div>
+<div class="flex flex-col gap-stack-sm font-label-caps text-label-caps">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-highest border-2 border-transparent hover:border-primary transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]">dashboard</span> Dashboard</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-highest border-2 border-transparent hover:border-primary transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]">report_problem</span> My Issues</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-highest border-2 border-transparent hover:border-primary transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]">precision_manufacturing</span> My Assets</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-highest border-2 border-transparent hover:border-primary transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]">notifications</span> Notifications</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-tertiary text-surface border-2 border-primary shadow-[4px_4px_0px_0px_rgba(29,28,22,1)] font-bold transition-colors duration-200" href="#"><span class="material-symbols-outlined text-[20px]">settings</span> Settings</a>
+</div>
+</div>
+<div class="flex items-center gap-3 p-4 border-t-2 border-primary bg-surface-container-low">
+<div class="w-10 h-10 rounded-full border-2 border-primary overflow-hidden bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary-container">person</span>
+</div>
+<div class="flex-grow">
+<div class="font-bold text-primary text-[14px] leading-tight">Alex Rivera</div>
+<div class="text-on-surface-variant text-[12px] font-label-caps uppercase tracking-wider">EMPLOYEE</div>
+</div>
+<button class="hover:text-secondary transition-colors cursor-pointer" title="Sign out">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 flex-1 flex flex-col min-h-screen">
+<!-- TopAppBar Context -->
+<header class="sticky top-0 z-40 flex justify-between items-center px-margin-desktop py-6 bg-transparent">
+<div>
+<h1 class="font-headline-lg text-4xl font-black uppercase tracking-tight text-primary">SETTINGS</h1>
+<p class="font-body-md text-sm text-on-surface-variant font-mono-label mt-1">Manage your account, security, and personal workspace preferences.</p>
+</div>
+<div class="flex items-center gap-3">
+<div class="bg-surface-container-low text-primary font-mono-label text-xs font-bold uppercase px-3 py-2 border-2 border-primary shadow-[3px_3px_0px_0px_rgba(29,28,22,1)] flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-[#10b981] inline-block"></span>
+<span>WEBMCP READY</span>
+<span class="text-on-surface-variant font-normal">|</span>
+<span class="text-on-surface-variant">Session: <strong class="text-primary">EMP-1042</strong></span>
+</div>
+</div>
+</header>
+<div class="p-margin-desktop pt-2 space-y-6 flex-1">
+<!-- 2-Column Main Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+<!-- LEFT COLUMN -->
+<div class="space-y-6">
+<!-- PROFILE SETTINGS CARD -->
+<div class="bg-surface-container-low border-2 border-primary shadow-[4px_4px_0px_0px_rgba(29,28,22,1)]">
+<div class="p-4 border-b-2 border-primary bg-primary text-white flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">account_box</span>
+<h2 class="font-headline-md text-lg font-bold uppercase tracking-tight">PROFILE SETTINGS</h2>
+</div>
+<span class="font-mono-label text-xs uppercase tracking-wider text-warm-cream">WORKSPACE IDENTITY</span>
+</div>
+<div class="p-5 space-y-4">
+<div>
+<label class="block font-label-caps text-xs uppercase font-bold text-primary mb-1.5">Full Name</label>
+<input class="w-full bg-white border-2 border-primary p-2.5 font-mono-label text-sm text-primary font-medium focus:outline-none focus:bg-yellow-50 focus:ring-0 shadow-[2px_2px_0px_0px_rgba(29,28,22,1)]" type="text" value="Alex Rivera">
+</div>
+<div>
+<label class="block font-label-caps text-xs uppercase font-bold text-primary mb-1.5">Work Email</label>
+<input class="w-full bg-white border-2 border-primary p-2.5 font-mono-label text-sm text-primary font-medium focus:outline-none focus:bg-yellow-50 focus:ring-0 shadow-[2px_2px_0px_0px_rgba(29,28,22,1)]" type="email" value="alex@company.com">
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div>
+<label class="block font-label-caps text-xs uppercase font-bold text-on-surface-variant mb-1.5 flex items-center justify-between">
+<span>Employee ID</span>
+<span class="inline-flex items-center text-[10px] text-on-surface-variant font-mono-label"><span class="material-symbols-outlined text-[12px] mr-0.5">lock</span> LOCKED</span>
+</label>
+<div class="w-full bg-surface-container-highest border-2 border-primary p-2.5 font-mono-label text-sm text-primary font-bold flex items-center justify-between">
+<span>EMP-1042</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">verified</span>
+</div>
+</div>
+<div>
+<label class="block font-label-caps text-xs uppercase font-bold text-on-surface-variant mb-1.5 flex items-center justify-between">
+<span>Department</span>
+<span class="inline-flex items-center text-[10px] text-on-surface-variant font-mono-label"><span class="material-symbols-outlined text-[12px] mr-0.5">lock</span> LOCKED</span>
+</label>
+<div class="w-full bg-surface-container-highest border-2 border-primary p-2.5 font-mono-label text-sm text-primary font-bold flex items-center justify-between">
+<span>Engineering</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">domain</span>
+</div>
+</div>
+</div>
+<div>
+<label class="block font-label-caps text-xs uppercase font-bold text-on-surface-variant mb-1.5">Account Role</label>
+<div class="w-full bg-surface-container-highest border-2 border-primary p-2.5 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="px-2.5 py-0.5 bg-secondary-container text-black font-label-caps text-xs font-bold uppercase border-2 border-primary">EMPLOYEE</span>
+<span class="font-mono-label text-xs text-on-surface-variant">Managed by IT Admin</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">shield</span>
+</div>
+</div>
+<div class="pt-2">
+<button class="px-5 py-2.5 bg-signal-orange text-black font-label-caps text-xs uppercase font-bold border-2 border-primary shadow-[4px_4px_0px_0px_rgba(29,28,22,1)] hover:bg-warm-cream hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">save</span>
+            [ SAVE PROFILE ]
+          </button>
+</div>
+</div>
+</div>
+<!-- NOTIFICATION PREFERENCES CARD -->
+<div class="bg-surface-container-low border-2 border-primary shadow-[4px_4px_0px_0px_rgba(29,28,22,1)]">
+<div class="p-4 border-b-2 border-primary bg-primary text-white flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+<h2 class="font-headline-md text-lg font-bold uppercase tracking-tight">NOTIFICATION PREFERENCES</h2>
+</div>
+<span class="font-mono-label text-xs uppercase tracking-wider text-warm-cream">DISPATCH RULES</span>
+</div>
+<div class="p-5 space-y-4">
+<p class="font-mono-label text-xs text-on-surface-variant">Control alerts delivered to your dashboard and inbox.</p>
+<div class="space-y-3">
+<!-- Toggle 1 -->
+<div class="p-3 bg-white border-2 border-primary flex items-center justify-between">
+<div>
+<div class="font-label-caps text-xs uppercase font-bold text-primary">Repair Status Updates</div>
+<div class="font-mono-label text-[11px] text-on-surface-variant">Real-time alerts when repair milestones advance</div>
+</div>
+<button class="px-3 py-1 bg-electric-yellow text-black font-label-caps text-xs font-black uppercase border-2 border-primary shadow-[2px_2px_0px_0px_rgba(29,28,22,1)] cursor-pointer">
+              [ ON ]
+            </button>
+</div>
+<!-- Toggle 2 -->
+<div class="p-3 bg-white border-2 border-primary flex items-center justify-between">
+<div>
+<div class="font-label-caps text-xs uppercase font-bold text-primary">Technician Assignment</div>
+<div class="font-mono-label text-[11px] text-on-surface-variant">Notice when a technician claims your open ticket</div>
+</div>
+<button class="px-3 py-1 bg-electric-yellow text-black font-label-caps text-xs font-black uppercase border-2 border-primary shadow-[2px_2px_0px_0px_rgba(29,28,22,1)] cursor-pointer">
+              [ ON ]
+            </button>
+</div>
+<!-- Toggle 3 -->
+<div class="p-3 bg-white border-2 border-primary flex items-center justify-between">
+<div>
+<div class="font-label-caps text-xs uppercase font-bold text-primary">Repair Resolved</div>
+<div class="font-mono-label text-[11px] text-on-surface-variant">Immediate ping when hardware is ready for pickup</div>
+</div>
+<button class="px-3 py-1 bg-electric-yellow text-black font-label-caps text-xs font-black uppercase border-2 border-primary shadow-[2px_2px_0px_0px_rgba(29,28,22,1)] cursor-pointer">
+              [ ON ]
+            </button>
+</div>
+<!-- Toggle 4 -->
+<div class="p-3 bg-white border-2 border-primary flex items-center justify-between">
+<div>
+<div class="font-label-caps text-xs uppercase font-bold text-primary">Warranty Warnings</div>
+<div class="font-mono-label text-[11px] text-on-surface-variant">Alerts 30/14 days before warranty expiration</div>
+</div>
+<button class="px-3 py-1 bg-electric-yellow text-black font-label-caps text-xs font-black uppercase border-2 border-primary shadow-[2px_2px_0px_0px_rgba(29,28,22,1)] cursor-pointer">
+              [ ON ]
+            </button>
+</div>
+<!-- Toggle 5 -->
+<div class="p-3 bg-white border-2 border-primary flex items-center justify-between">
+<div>
+<div class="font-label-caps text-xs uppercase font-bold text-primary">System Notices</div>
+<div class="font-mono-label text-[11px] text-on-surface-variant">Lab maintenance and planned bench downtime</div>
+</div>
+<button class="px-3 py-1 bg-electric-yellow text-black font-label-caps text-xs font-black uppercase border-2 border-primary shadow-[2px_2px_0px_0px_rgba(29,28,22,1)] cursor-pointer">
+              [ ON ]
+            </button>
+</div>
+</div>
+<div class="pt-2">
+<button class="px-5 py-2.5 bg-electric-yellow text-black font-label-caps text-xs uppercase font-bold border-2 border-primary shadow-[4px_4px_0px_0px_rgba(29,28,22,1)] hover:bg-warm-cream hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">check</span>
+            [ SAVE PREFERENCES ]
+          </button>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN -->
+<div class="space-y-6">
+<!-- SECURITY CARD -->
+<div class="bg-surface-container-low border-2 border-primary shadow-[4px_4px_0px_0px_rgba(29,28,22,1)]">
+<div class="p-4 border-b-2 border-primary bg-primary text-white flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">security</span>
+<h2 class="font-headline-md text-lg font-bold uppercase tracking-tight">SECURITY</h2>
+</div>
+<span class="font-mono-label text-xs uppercase tracking-wider text-warm-cream">CREDENTIALS</span>
+</div>
+<div class="p-5 space-y-4">
+<div>
+<label class="block font-label-caps text-xs uppercase font-bold text-primary mb-1.5">Current Password</label>
+<input class="w-full bg-white border-2 border-primary p-2.5 font-mono-label text-sm text-primary focus:outline-none focus:bg-yellow-50 focus:ring-0 shadow-[2px_2px_0px_0px_rgba(29,28,22,1)]" placeholder="••••••••••••" type="password">
+</div>
+<div>
+<label class="block font-label-caps text-xs uppercase font-bold text-primary mb-1.5">New Password</label>
+<input class="w-full bg-white border-2 border-primary p-2.5 font-mono-label text-sm text-primary focus:outline-none focus:bg-yellow-50 focus:ring-0 shadow-[2px_2px_0px_0px_rgba(29,28,22,1)]" placeholder="Minimum 12 characters" type="password">
+</div>
+<div>
+<label class="block font-label-caps text-xs uppercase font-bold text-primary mb-1.5">Confirm New Password</label>
+<input class="w-full bg-white border-2 border-primary p-2.5 font-mono-label text-sm text-primary focus:outline-none focus:bg-yellow-50 focus:ring-0 shadow-[2px_2px_0px_0px_rgba(29,28,22,1)]" placeholder="Re-enter new password" type="password">
+</div>
+<div class="pt-1">
+<button class="px-5 py-2.5 bg-black text-white font-label-caps text-xs uppercase font-bold border-2 border-primary shadow-[4px_4px_0px_0px_rgba(29,28,22,1)] hover:bg-surface-container-highest hover:text-black hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">key</span>
+            [ UPDATE PASSWORD ]
+          </button>
+</div>
+<!-- ACTIVE SESSIONS SUB-BOX -->
+<div class="mt-4 pt-4 border-t-2 border-primary space-y-3">
+<div class="font-label-caps text-xs uppercase font-bold text-primary flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">devices</span>
+            ACTIVE SESSIONS
+          </div>
+<div class="p-3 bg-white border-2 border-primary flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+<div class="space-y-0.5">
+<div class="font-bold text-primary text-xs font-mono-label flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#10b981] inline-block"></span>
+                Chrome on macOS • 192.168.1.45
+              </div>
+<div class="font-mono-label text-[11px] text-on-surface-variant">Session started 2h ago (Active Now)</div>
+</div>
+<span class="px-2 py-0.5 bg-surface-container-highest text-black font-label-caps text-[10px] font-bold uppercase border border-primary w-fit">THIS DEVICE</span>
+</div>
+<button class="w-full px-4 py-2 bg-white text-black font-label-caps text-xs uppercase font-bold border-2 border-primary shadow-[3px_3px_0px_0px_rgba(29,28,22,1)] hover:bg-surface-container-highest hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[16px]">phonelink_erase</span>
+            [ LOG OUT OTHER SESSIONS ]
+          </button>
+</div>
+</div>
+</div>
+<!-- APPLICATION PREFERENCES CARD -->
+<div class="bg-surface-container-low border-2 border-primary shadow-[4px_4px_0px_0px_rgba(29,28,22,1)]">
+<div class="p-4 border-b-2 border-primary bg-primary text-white flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">display_settings</span>
+<h2 class="font-headline-md text-lg font-bold uppercase tracking-tight">APPLICATION PREFERENCES</h2>
+</div>
+<span class="font-mono-label text-xs uppercase tracking-wider text-warm-cream">INTERFACE</span>
+</div>
+<div class="p-5 space-y-3">
+<!-- Toggle 1 -->
+<div class="p-3 bg-white border-2 border-primary flex items-center justify-between">
+<div>
+<div class="font-label-caps text-xs uppercase font-bold text-primary">Email Notifications</div>
+<div class="font-mono-label text-[11px] text-on-surface-variant">Send digest &amp; ticket updates to work email</div>
+</div>
+<button class="px-3 py-1 bg-electric-yellow text-black font-label-caps text-xs font-black uppercase border-2 border-primary shadow-[2px_2px_0px_0px_rgba(29,28,22,1)] cursor-pointer">
+            [ ON ]
+          </button>
+</div>
+<!-- Toggle 2 -->
+<div class="p-3 bg-white border-2 border-primary flex items-center justify-between">
+<div>
+<div class="font-label-caps text-xs uppercase font-bold text-primary">Compact View</div>
+<div class="font-mono-label text-[11px] text-on-surface-variant">Condensed tables and smaller padding for telemetry</div>
+</div>
+<button class="px-3 py-1 bg-surface-container-highest text-on-surface-variant font-label-caps text-xs font-bold uppercase border-2 border-primary shadow-[2px_2px_0px_0px_rgba(29,28,22,1)] cursor-pointer">
+            [ OFF ]
+          </button>
+</div>
+<!-- Toggle 3 -->
+<div class="p-3 bg-white border-2 border-primary flex items-center justify-between">
+<div>
+<div class="font-label-caps text-xs uppercase font-bold text-primary">Reduced Motion</div>
+<div class="font-mono-label text-[11px] text-on-surface-variant">Disable decorative UI transitions and hover translations</div>
+</div>
+<button class="px-3 py-1 bg-surface-container-highest text-on-surface-variant font-label-caps text-xs font-bold uppercase border-2 border-primary shadow-[2px_2px_0px_0px_rgba(29,28,22,1)] cursor-pointer">
+            [ OFF ]
+          </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- FULL-WIDTH BOTTOM SECTION: DANGER ZONE -->
+<div class="bg-surface-container-low border-2 border-primary shadow-[4px_4px_0px_0px_rgba(29,28,22,1)] border-l-[8px] border-l-signal-orange">
+<div class="p-4 border-b-2 border-primary bg-[#1A1A1A] text-white flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 bg-signal-orange text-black font-label-caps text-[11px] font-extrabold uppercase border border-black">DANGER ZONE</span>
+<h2 class="font-headline-md text-base font-bold uppercase tracking-tight text-warm-cream">SESSION MANAGEMENT &amp; ACCOUNT TERMINATION</h2>
+</div>
+<span class="font-mono-label text-[11px] text-[#ff8a65] font-bold uppercase">ADMIN RESTRICTED</span>
+</div>
+<div class="p-5 space-y-4">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b-2 border-primary">
+<div class="space-y-1">
+<div class="font-label-caps text-xs uppercase font-bold text-primary">Sign out of all devices</div>
+<p class="font-mono-label text-xs text-on-surface-variant">Invalidate all existing WebMCP authorization tokens and active workstation sessions.</p>
+</div>
+<button class="px-4 py-2.5 bg-signal-orange text-black font-label-caps text-xs uppercase font-bold border-2 border-primary shadow-[3px_3px_0px_0px_rgba(29,28,22,1)] hover:bg-warm-cream hover:translate-x-0.5 hover:translate-y-0.5 transition-all shrink-0 cursor-pointer flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">logout</span>
+        [ SIGN OUT ALL SESSIONS ]
+      </button>
+</div>
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="space-y-1">
+<div class="font-label-caps text-xs uppercase font-bold text-primary">Account Deactivation</div>
+<p class="font-mono-label text-xs text-on-surface-variant">Personal accounts are provisioned and decommissioned via HR &amp; IT Operations. To request departure offboarding, contact System Admin.</p>
+</div>
+<div class="px-4 py-2 bg-surface-container-highest text-on-surface-variant font-label-caps text-xs uppercase font-bold border-2 border-primary shadow-[2px_2px_0px_0px_rgba(29,28,22,1)] shrink-0 flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">admin_panel_settings</span>
+        [ MANAGED BY IT ADMIN ]
+      </div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

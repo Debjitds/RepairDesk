@@ -1,0 +1,326 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Employee Dashboard - RepairDesk</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Space+Grotesk:wght@600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed-variant": "#832700",
+                        "tertiary-fixed-dim": "#b9d300",
+                        "outline-variant": "#c4c7c7",
+                        "surface-container-high": "#ede8de",
+                        "secondary": "#ab3600",
+                        "on-background": "#1d1c16",
+                        "on-secondary-fixed": "#390c00",
+                        "surface-container": "#f2ede3",
+                        "on-tertiary-fixed": "#191e00",
+                        "inverse-primary": "#c8c6c5",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed-dim": "#c8c6c5",
+                        "on-primary-fixed-variant": "#474746",
+                        "on-tertiary-fixed-variant": "#414c00",
+                        "on-secondary-container": "#551600",
+                        "on-surface": "#1d1c16",
+                        "on-primary": "#ffffff",
+                        "primary-container": "#1c1b1b",
+                        "secondary-fixed": "#ffdbcf",
+                        "secondary-container": "#fe5e1e",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#f8f3e9",
+                        "inverse-on-surface": "#f5f0e6",
+                        "surface-container-highest": "#e7e2d8",
+                        "inverse-surface": "#32302a",
+                        "on-primary-container": "#858383",
+                        "error": "#ba1a1a",
+                        "tertiary": "#000000",
+                        "on-tertiary-container": "#7a8c00",
+                        "surface-bright": "#fef9ef",
+                        "secondary-fixed-dim": "#ffb59c",
+                        "on-error-container": "#93000a",
+                        "surface-tint": "#5f5e5e",
+                        "outline": "#747878",
+                        "on-primary-fixed": "#1c1b1b",
+                        "primary": "#000000",
+                        "on-surface-variant": "#444748",
+                        "surface-dim": "#dedad0",
+                        "tertiary-container": "#191e00",
+                        "primary-fixed": "#e5e2e1",
+                        "background": "#fef9ef",
+                        "surface-container-lowest": "#ffffff",
+                        "surface": "#fef9ef",
+                        "tertiary-fixed": "#d3f000",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#e7e2d8",
+                        
+                        // Custom Accents based on prompt
+                        "signal-orange": "#ff5722",
+                        "electric-yellow": "#eaff00",
+                        "warm-cream": "#f2ede3", // using surface-container as warm-cream
+                        "near-black": "#1A1A1A"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "48px",
+                        "container-max": "1280px",
+                        "stack-md": "16px",
+                        "base": "8px",
+                        "stack-lg": "32px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Space Grotesk"],
+                        "headline-lg-mobile": ["Space Grotesk"],
+                        "headline-md": ["Space Grotesk"],
+                        "display-lg": ["Space Grotesk"],
+                        "label-caps": ["Space Grotesk"],
+                        "mono-label": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "headline-md": ["32px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "display-lg": ["72px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+                        "label-caps": ["14px", { "lineHeight": "1.2", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "mono-label": ["12px", { "lineHeight": "1.0", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .neo-brutalist-border { border: 3px solid #000; }
+        .neo-brutalist-border-b { border-bottom: 3px solid #000; }
+        .neo-brutalist-border-r { border-right: 3px solid #000; }
+        .neo-brutalist-border-t { border-top: 3px solid #000; }
+        .neo-brutalist-shadow { box-shadow: 4px 4px 0px 0px rgba(26, 26, 26, 1); }
+        .neo-brutalist-shadow-hover:hover { 
+            box-shadow: 0px 0px 0px 0px rgba(26, 26, 26, 1); 
+            transform: translate(4px, 4px);
+        }
+        .neo-brutalist-shadow-active:active {
+            box-shadow: 0px 0px 0px 0px rgba(26, 26, 26, 1); 
+            transform: translate(4px, 4px);
+        }
+        
+        .dotted-bg {
+            background-image: radial-gradient(#1A1A1A 1px, transparent 1px);
+            background-size: 16px 16px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen flex" style="background-image: radial-gradient(#1A1A1A 1px, transparent 0); background-size: 24px 24px;">
+<!-- SideNavBar -->
+<aside class="bg-surface dark:bg-surface text-primary dark:text-on-surface fixed top-0 left-0 h-screen w-64 z-50 border-r-[3px] border-tertiary dark:border-outline flex flex-col justify-between min-h-screen" style="bottom: 0px;">
+<div class="p-stack-md">
+<div class="font-headline-md text-[28px] font-black tracking-tighter text-primary dark:text-on-surface mb-stack-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-[32px]">precision_manufacturing</span>
+            RepairDesk
+        </div>
+<div class="flex flex-col gap-stack-sm font-label-caps text-label-caps"><a class="flex items-center gap-3 px-4 py-3 bg-tertiary text-surface border-2 border-primary shadow-[4px_4px_0px_0px_rgba(29,28,22,1)] font-bold transition-colors duration-200" href="#"><span class="material-symbols-outlined text-[20px]">dashboard</span> Dashboard </a><a class="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-highest border-2 border-transparent hover:border-primary transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]">report_problem</span> My Issues </a><a class="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-highest border-2 border-transparent hover:border-primary transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]">precision_manufacturing</span> My Assets </a><a class="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-highest border-2 border-transparent hover:border-primary transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]">notifications</span> Notifications </a><a class="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-highest border-2 border-transparent hover:border-primary transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]">settings</span> Settings </a></div>
+</div>
+<div class="flex items-center gap-3 p-4 border-t-2 border-primary bg-surface-container-low">
+    <div class="w-10 h-10 rounded-full border-2 border-primary overflow-hidden bg-secondary-container flex items-center justify-center">
+        <span class="material-symbols-outlined text-on-secondary-container">person</span>
+    </div>
+    <div class="flex-grow">
+        <div class="font-bold text-primary text-[14px] leading-tight">Alex Rivera</div>
+        <div class="text-on-surface-variant text-[12px] font-label-caps uppercase tracking-wider">EMPLOYEE</div>
+    </div>
+    <button class="hover:text-secondary transition-colors">
+        <span class="material-symbols-outlined text-[20px]">logout</span>
+    </button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 flex-1 flex flex-col min-h-screen">
+<!-- TopAppBar Context -->
+<header class="sticky top-0 z-40 flex justify-between items-center px-margin-desktop py-6 bg-transparent">
+<div>
+<h1 class="font-headline-lg text-4xl font-black uppercase tracking-tight text-primary">MY WORKSPACE</h1>
+<p class="font-body-md text-sm text-on-surface-variant font-mono-label mt-1">Employee Dashboard • Equipment, repair requests &amp; live updates</p>
+</div>
+<button class="bg-signal-orange text-black font-label-caps text-sm font-bold uppercase px-5 py-2.5 border-2 border-primary shadow-[4px_4px_0px_0px_rgba(29,28,22,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all duration-100 flex items-center gap-2 cursor-pointer">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: &quot;FILL&quot; 1;">add_circle</span>
++ REPORT AN ISSUE
+</button>
+</header>
+<div class="p-margin-desktop space-y-gutter flex-1">
+<!-- KPI Cards Row -->
+<div class="grid grid-cols-4 gap-gutter">
+<div class="bg-warm-cream p-6 neo-brutalist-border neo-brutalist-shadow flex flex-col justify-between h-32">
+<div class="font-label-caps text-label-caps uppercase text-on-surface-variant">MY ASSETS</div>
+<div class="font-display-lg text-display-lg text-primary">3</div>
+</div>
+<div class="bg-warm-cream p-6 neo-brutalist-border neo-brutalist-shadow flex flex-col justify-between h-32">
+<div class="font-label-caps text-label-caps uppercase text-on-surface-variant">OPEN ISSUES</div>
+<div class="font-display-lg text-display-lg text-primary">1</div>
+</div>
+<div class="bg-signal-orange p-6 neo-brutalist-border neo-brutalist-shadow flex flex-col justify-between h-32">
+<div class="font-label-caps text-label-caps uppercase text-black">IN REPAIR</div>
+<div class="font-display-lg text-display-lg text-black">1</div>
+</div>
+<div class="bg-electric-yellow p-6 neo-brutalist-border neo-brutalist-shadow flex flex-col justify-between h-32">
+<div class="font-label-caps text-label-caps uppercase text-black">RESOLVED</div>
+<div class="font-display-lg text-display-lg text-black">4</div>
+</div>
+</div>
+<!-- Main Content Grid -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Left Column -->
+<div class="col-span-5 space-y-gutter">
+<!-- MY ASSETS Panel -->
+<div class="bg-warm-cream neo-brutalist-border neo-brutalist-shadow flex flex-col">
+<div class="p-4 neo-brutalist-border-b bg-electric-yellow">
+<h2 class="font-headline-md text-headline-md text-black">MY ASSETS</h2>
+</div>
+<div class="flex-1 p-0 flex flex-col">
+<!-- Asset 1 -->
+<div class="p-2.5 border-b border-black flex justify-between items-center hover:bg-near-black hover:text-warm-cream group transition-colors"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-signal-orange neo-brutalist-border flex items-center justify-center"><span class="material-symbols-outlined text-black text-[20px]">laptop_mac</span></div><div><div class="font-label-caps text-sm group-hover:text-warm-cream">LAP-018</div><div class="font-mono-label text-xs text-error group-hover:text-signal-orange">In Repair</div></div></div><button class="bg-transparent group-hover:bg-warm-cream group-hover:text-black text-primary px-3 py-1.5 neo-brutalist-border font-label-caps text-xs uppercase transition-colors">VIEW</button></div>
+<!-- Asset 2 -->
+<div class="p-2.5 border-b border-black flex justify-between items-center hover:bg-near-black hover:text-warm-cream group transition-colors"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-white neo-brutalist-border flex items-center justify-center"><span class="material-symbols-outlined text-black text-[20px]">desktop_windows</span></div><div><div class="font-label-caps text-sm group-hover:text-warm-cream">MON-044</div><div class="font-mono-label text-xs text-on-surface-variant group-hover:text-gray-400">Active</div></div></div><button class="bg-transparent group-hover:bg-warm-cream group-hover:text-black text-primary px-3 py-1.5 neo-brutalist-border font-label-caps text-xs uppercase transition-colors">VIEW</button></div>
+<!-- Asset 3 -->
+<div class="p-2.5 flex justify-between items-center hover:bg-near-black hover:text-warm-cream group transition-colors"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-white neo-brutalist-border flex items-center justify-center"><span class="material-symbols-outlined text-black text-[20px]">smartphone</span></div><div><div class="font-label-caps text-sm group-hover:text-warm-cream">MOB-011</div><div class="font-mono-label text-xs text-on-surface-variant group-hover:text-gray-400">Active</div></div></div><button class="bg-transparent group-hover:bg-warm-cream group-hover:text-black text-primary px-3 py-1.5 neo-brutalist-border font-label-caps text-xs uppercase transition-colors">VIEW</button></div>
+</div>
+</div>
+<!-- REPORT AN ISSUE Quick Action -->
+
+<div class="neo-brutalist-border bg-black text-white p-4 shadow-[4px_4px_0px_0px_rgba(29,28,22,1)] flex flex-col justify-between"><div class="flex items-center justify-between pb-2 mb-2 border-b border-neutral-700"><div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-electric-yellow inline-block animate-pulse"></span><span class="font-headline-md text-xs font-bold uppercase tracking-wider text-electric-yellow">WEBMCP LOG</span></div><span class="text-[10px] font-mono-label text-neutral-400">AGENT READY</span></div><div class="space-y-1.5 font-mono-label text-[11px] leading-tight text-neutral-300"><div class="flex items-start gap-2"><span class="text-signal-orange font-semibold">10:42 AM</span><span class="">&gt; Agent checked LAP-018 diagnostic metrics</span></div><div class="flex items-start gap-2"><span class="text-signal-orange font-semibold">10:15 AM</span><span class="">&gt; Telemetry synced with hardware bench</span></div></div></div></div>
+<!-- Right Column -->
+<div class="col-span-7 space-y-gutter">
+<!-- MY REPAIR REQUESTS Table -->
+<div class="bg-warm-cream neo-brutalist-border neo-brutalist-shadow overflow-hidden">
+<div class="p-4 neo-brutalist-border-b bg-primary text-white">
+<h2 class="font-headline-md text-headline-md">MY REPAIR REQUESTS</h2>
+</div>
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-electric-yellow neo-brutalist-border-b text-black font-label-caps text-label-caps uppercase">
+<th class="p-4 w-1/4">Ticket ID</th>
+<th class="p-4 w-1/3">Issue</th>
+<th class="p-4 w-1/4">Status</th>
+<th class="p-4">Action</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md">
+<tr class="border-b border-black hover:bg-near-black hover:text-warm-cream group transition-colors">
+<td class="p-4 font-mono-label text-mono-label font-bold">#RD-1048</td>
+<td class="p-4">Overheating Issue</td>
+<td class="p-4">
+<span class="inline-block px-3 py-1 bg-signal-orange text-black neo-brutalist-border font-label-caps text-label-caps uppercase text-[10px]">IN REPAIR</span>
+</td>
+<td class="p-4">
+<button class="bg-white group-hover:bg-warm-cream group-hover:text-black text-primary px-3 py-1 neo-brutalist-border font-label-caps text-label-caps uppercase text-[10px]">DETAILS</button>
+</td>
+</tr>
+<tr class="hover:bg-near-black hover:text-warm-cream group transition-colors">
+<td class="p-4 font-mono-label text-mono-label font-bold">#RD-1027</td>
+<td class="p-4">Screen Flickering</td>
+<td class="p-4">
+<span class="inline-block px-3 py-1 bg-electric-yellow text-black neo-brutalist-border font-label-caps text-label-caps uppercase text-[10px]">RESOLVED</span>
+</td>
+<td class="p-4">
+<button class="bg-white group-hover:bg-warm-cream group-hover:text-black text-primary px-3 py-1 neo-brutalist-border font-label-caps text-label-caps uppercase text-[10px]">DETAILS</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="grid grid-cols-2 gap-gutter">
+<!-- ASSIGNED TECHNICIAN Card -->
+<div class="bg-warm-cream neo-brutalist-border neo-brutalist-shadow flex flex-col h-full">
+<div class="p-4 neo-brutalist-border-b bg-white flex justify-between items-center">
+<h2 class="font-headline-md text-headline-md">TECHNICIAN</h2>
+<span class="material-symbols-outlined text-signal-orange">engineering</span>
+</div>
+<div class="p-4 flex flex-col items-center text-center gap-2">
+<img class="w-16 h-16 rounded-none neo-brutalist-border object-cover bg-gray-200" data-alt="A detailed headshot portrait of a professional hardware technician wearing a high-vis or technical uniform. The lighting is sharp and clinical, emphasizing precision. Background is a slightly blurred, bright, modern server room or repair lab with industrial aesthetics. Colors are neutral with sharp black contrasts." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdp8HhibgawQmuTQEWXbZquSMnncpTdwKs3O4VVorVjzdiWwXX50rgSOs5WCY8SA6UKmap4X-rlrQgP3v_praducLUM-On4mwAkXOfy_2HaJVfzirQ_kBnzYS1OZKPQ5mfiPa9Aq9wvOjIzcFpa-afULZHFhcFuL5u3xauZbGUHwvV0KpjPgF7ke3mWCUcRn32fuf2hwPl45n4Pfew1aHpihCyFWS_5K_4ODjH9uw9jH4XjsTIWl5JBA">
+<div>
+<div class="font-headline-md text-[20px] font-bold leading-tight">Priya Sharma</div>
+<div class="font-mono-label text-mono-label text-on-surface-variant uppercase mt-0.5">Hardware Technician</div>
+</div>
+<div class="w-full pt-2.5 mt-1 neo-brutalist-border-t">
+<div class="font-label-caps text-label-caps text-on-surface-variant uppercase mb-0.5">Working On</div>
+<div class="font-mono-label text-mono-label font-bold text-base">#RD-1048</div>
+</div>
+</div>
+</div>
+<!-- RECENT UPDATES Feed -->
+<div class="bg-warm-cream neo-brutalist-border neo-brutalist-shadow flex flex-col h-full">
+<div class="p-4 neo-brutalist-border-b bg-white">
+<h2 class="font-headline-md text-headline-md">RECENT UPDATES</h2>
+</div>
+<div class="p-3.5 space-y-2 flex-1 overflow-y-auto">
+<div class="flex gap-3">
+<div class="flex flex-col items-center">
+<div class="w-3.5 h-3.5 bg-signal-orange rounded-none neo-brutalist-border"></div>
+<div class="w-0.5 h-full bg-black my-1"></div>
+</div>
+<div class="pb-2">
+<div class="font-mono-label text-mono-label text-on-surface-variant text-[10px]">TODAY, 10:42 AM</div>
+<div class="font-body-md text-sm mt-0.5 leading-snug">Your repair <span class="font-bold">#RD-1048</span> is now <span class="bg-signal-orange text-black px-1 neo-brutalist-border text-xs">In Repair</span>.</div>
+</div>
+</div>
+<div class="flex gap-3">
+<div class="flex flex-col items-center">
+<div class="w-3.5 h-3.5 bg-electric-yellow rounded-none neo-brutalist-border"></div>
+<div class="w-0.5 h-full bg-black my-1"></div>
+</div>
+<div class="pb-2">
+<div class="font-mono-label text-mono-label text-on-surface-variant text-[10px]">YESTERDAY, 2:15 PM</div>
+<div class="font-body-md text-sm mt-0.5 leading-snug">Technician <span class="font-bold">Priya Sharma</span> assigned to <span class="font-bold">#RD-1048</span>.</div>
+</div>
+</div>
+<div class="flex gap-3">
+<div class="flex flex-col items-center">
+<div class="w-3.5 h-3.5 bg-white rounded-none neo-brutalist-border"></div>
+</div>
+<div>
+<div class="font-mono-label text-mono-label text-on-surface-variant text-[10px]">OCT 12, 09:00 AM</div>
+<div class="font-body-md text-sm mt-0.5 leading-snug">Ticket <span class="font-bold">#RD-1048</span> created.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Dark Activity Log (WebMCP Activity) -->
+
+</div>
+</main>
+
+
+
+
+
+
+
+
+
+
+
+
+</body></html>

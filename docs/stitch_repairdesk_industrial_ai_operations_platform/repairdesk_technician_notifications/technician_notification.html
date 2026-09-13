@@ -1,0 +1,389 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>RepairDesk - Technician Notifications</title>
+<!-- Fonts: Space Grotesk & Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;family=Space+Grotesk:wght@500;600;700;800&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS v3 with Forms & Container Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              cream: '#FEF9EF',
+              orange: '#FE5E1E',
+              yellow: '#D3F000',
+              surface: '#F2EDE3',
+              black: '#000000'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Space Grotesk', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          },
+          boxShadow: {
+            'brutal-sm': '2px 2px 0px 0px #000000',
+            'brutal': '3px 3px 0px 0px #000000',
+            'brutal-lg': '4px 4px 0px 0px #000000'
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-layout">
+    /* Neo-Brutalist dotted grid texture */
+    .bg-dot-pattern {
+      background-color: #FEF9EF;
+      background-image: radial-gradient(#000000 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+    
+    /* Hard borders */
+    .border-brutal {
+      border: 3px solid #000000;
+    }
+    .border-brutal-2 {
+      border: 2px solid #000000;
+    }
+  </style>
+</head>
+<body class="bg-[#FEF9EF] text-black font-sans antialiased min-h-screen selection:bg-[#D3F000] selection:text-black">
+<!-- BEGIN: Sidebar -->
+<aside class="bg-surface dark:bg-surface text-primary dark:text-on-surface fixed top-0 left-0 h-screen w-64 z-50 border-r-[3px] border-black flex flex-col justify-between min-h-screen" style="bottom: 0px;"><div class="p-4"><div class="font-display text-[28px] font-black tracking-tighter text-black mb-8 flex items-center gap-2"><span class="material-symbols-outlined text-[32px]" data-icon="precision_manufacturing">precision_manufacturing</span> RepairDesk </div><div class="flex flex-col gap-2 font-display text-sm tracking-wide"><a class="flex items-center gap-3 px-4 py-3 text-black hover:bg-[#F2EDE3] border-2 border-transparent hover:border-black transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="dashboard">dashboard</span> Dashboard </a><a class="flex items-center gap-3 px-4 py-3 text-black hover:bg-[#F2EDE3] border-2 border-transparent hover:border-black transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="build">build</span> My Repairs </a><a class="flex items-center gap-3 px-4 py-3 text-black hover:bg-[#F2EDE3] border-2 border-transparent hover:border-black transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="precision_manufacturing">precision_manufacturing</span> Assets </a><a class="flex items-center gap-3 px-4 py-3 text-black hover:bg-[#F2EDE3] border-2 border-transparent hover:border-black transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="history">history</span> Repair History </a><a class="flex items-center gap-3 px-4 py-3 bg-black text-[#FEF9EF] border-2 border-black font-bold transition-colors duration-200" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="notifications">notifications</span> Notifications </a><a class="flex items-center gap-3 px-4 py-3 text-black hover:bg-[#F2EDE3] border-2 border-transparent hover:border-black transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span> Settings </a></div></div><div class="flex items-center gap-3 p-4 border-t-2 border-black bg-[#FEF9EF]"><div class="w-10 h-10 rounded-full border-2 border-black overflow-hidden bg-[#FE5E1E] flex items-center justify-center"><span class="material-symbols-outlined text-black">person</span></div><div class="flex-grow"><div class="font-bold text-black text-[14px] leading-tight">Alex Rivera</div><div class="text-zinc-600 text-[12px] font-display uppercase tracking-wider">Technician</div></div><button class="hover:text-[#FE5E1E] transition-colors"><span class="material-symbols-outlined text-[20px]">logout</span></button></div></aside>
+<!-- END: Sidebar -->
+<!-- BEGIN: MainContent -->
+<main class="ml-64 p-8 lg:p-10 min-h-screen bg-dot-pattern">
+<div class="max-w-7xl mx-auto space-y-6">
+<!-- BEGIN: HeaderSection -->
+<section class="flex flex-col md:flex-row md:items-center justify-between gap-4" data-purpose="page-header">
+<div>
+<h1 class="font-display font-black text-3xl md:text-4xl tracking-tight uppercase text-black">NOTIFICATIONS</h1>
+<p class="text-sm font-medium text-zinc-800 mt-1">Updates about your repairs, assigned assets, and work.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="border-brutal bg-[#FEF9EF] shadow-brutal px-4 py-2 font-display font-bold text-xs uppercase hover:bg-neutral-100 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-1.5">
+<svg class="w-3.5 h-3.5 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M4 6h16M4 12h16M4 18h7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+            CLEAR READ
+          </button>
+<button class="border-brutal bg-[#D3F000] text-black shadow-brutal px-5 py-2 font-display font-bold text-xs uppercase hover:brightness-95 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-1.5">
+<svg class="w-3.5 h-3.5 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+            MARK ALL AS READ
+          </button>
+</div>
+</section>
+<!-- END: HeaderSection -->
+<!-- BEGIN: SummaryCards -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6" data-purpose="summary-cards">
+<!-- Card 1: Unread Alerts -->
+<div class="border-brutal bg-[#D3F000] p-6 shadow-brutal-lg flex items-center justify-between">
+<div>
+<div class="text-[11px] font-display font-black uppercase tracking-wider text-black">UNREAD ALERTS</div>
+<div class="text-5xl font-display font-black tracking-tight mt-1 text-black">04</div>
+</div>
+<div class="w-12 h-12 bg-black flex items-center justify-center text-[#D3F000]">
+<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+<path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"></path>
+</svg>
+</div>
+</div>
+<!-- Card 2: Received Today -->
+<div class="border-brutal bg-white p-6 shadow-brutal-lg flex items-center justify-between">
+<div>
+<div class="text-[11px] font-display font-black uppercase tracking-wider text-zinc-600">RECEIVED TODAY</div>
+<div class="text-5xl font-display font-black tracking-tight mt-1 text-black">03</div>
+</div>
+<div class="w-12 h-12 border-brutal-2 bg-[#FEF9EF] flex items-center justify-center text-black">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+<!-- Card 3: This Week -->
+<div class="border-brutal bg-white p-6 shadow-brutal-lg flex items-center justify-between">
+<div>
+<div class="text-[11px] font-display font-black uppercase tracking-wider text-zinc-600">THIS WEEK</div>
+<div class="text-5xl font-display font-black tracking-tight mt-1 text-black">09</div>
+</div>
+<div class="w-12 h-12 border-brutal-2 bg-[#FEF9EF] flex items-center justify-center text-black">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+</section>
+<!-- END: SummaryCards -->
+<!-- BEGIN: SearchAndFilterBar -->
+<section class="border-brutal bg-white shadow-brutal-lg" data-purpose="search-and-filters">
+<!-- Top row: Search input -->
+<div class="p-3 border-b-[3px] border-black flex items-center gap-3">
+<svg class="w-5 h-5 text-black ml-2" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<input class="w-full bg-transparent border-none focus:ring-0 text-sm font-medium placeholder-zinc-500 py-1" placeholder="Search notifications..." type="text">
+<button class="border-brutal-2 bg-[#FEF9EF] px-3 py-1 font-display font-bold text-xs uppercase flex items-center gap-1 hover:bg-neutral-100">
+<svg class="w-3.5 h-3.5 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+            FILTER
+          </button>
+</div>
+<!-- Bottom row: Filter Chips -->
+<div class="p-3 bg-[#FEF9EF] flex flex-wrap items-center gap-y-2 gap-x-6 text-xs font-display">
+<!-- Filter state -->
+<div class="flex items-center gap-2">
+<span class="font-bold text-zinc-600 uppercase text-[11px]">FILTER:</span>
+<button class="bg-black text-white px-2.5 py-1 font-bold border-2 border-black uppercase text-[11px]">ALL</button>
+<button class="bg-[#D3F000] text-black px-2.5 py-1 font-bold border-2 border-black uppercase text-[11px]">UNREAD (4)</button>
+<button class="bg-white text-black px-2.5 py-1 font-bold border-2 border-black uppercase text-[11px] hover:bg-neutral-100">READ (5)</button>
+</div>
+<!-- Vertical separator -->
+<div class="hidden md:block w-[2px] h-4 bg-zinc-400"></div>
+<!-- Type filter -->
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-bold text-zinc-600 uppercase text-[11px]">TYPE:</span>
+<button class="bg-black text-white px-2.5 py-1 font-bold border-2 border-black uppercase text-[11px]">ALL TYPES</button>
+<button class="bg-white text-black px-2.5 py-1 font-bold border-2 border-black uppercase text-[11px] hover:bg-neutral-100">REPAIRS</button>
+<button class="bg-white text-black px-2.5 py-1 font-bold border-2 border-black uppercase text-[11px] hover:bg-neutral-100">ASSETS</button>
+<button class="bg-white text-black px-2.5 py-1 font-bold border-2 border-black uppercase text-[11px] hover:bg-neutral-100">ASSIGNMENTS</button>
+<button class="bg-white text-black px-2.5 py-1 font-bold border-2 border-black uppercase text-[11px] hover:bg-neutral-100">SYSTEM</button>
+</div>
+</div>
+</section>
+<!-- END: SearchAndFilterBar -->
+<!-- BEGIN: NotificationListContainer -->
+<section class="space-y-4" data-purpose="notification-list">
+<!-- List Header Bar -->
+<div class="bg-black text-[#FEF9EF] px-5 py-3 border-brutal flex items-center justify-between">
+<h2 class="font-display font-black text-sm uppercase tracking-wider">YOUR NOTIFICATIONS</h2>
+<span class="text-[11px] font-mono tracking-wide text-zinc-300">SHOWING 5 RECENT ALERTS</span>
+</div>
+<!-- Notification Card 1: New Repair Assignment (UNREAD) -->
+<article class="border-brutal bg-white p-5 shadow-brutal-lg transition-transform hover:-translate-y-0.5">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="space-y-2 max-w-3xl">
+<!-- Meta badges -->
+<div class="flex items-center gap-2 flex-wrap">
+<span class="bg-[#FE5E1E] text-white border-2 border-black font-display font-bold text-[10px] uppercase px-2 py-0.5 tracking-wider">NEW REPAIR ASSIGNMENT</span>
+<span class="bg-black text-[#D3F000] border-2 border-black font-display font-bold text-[10px] uppercase px-2 py-0.5 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#D3F000]"></span>
+                  UNREAD
+                </span>
+<span class="text-[11px] font-mono text-zinc-600 font-bold">10:42 AM (TODAY)</span>
+</div>
+<!-- Title & Content -->
+<h3 class="font-display font-bold text-base text-black">Repair #RD-1048 has been assigned to you</h3>
+<p class="text-xs text-zinc-700 leading-relaxed">Repair #RD-1048 for Conference Projector PROJ-023 has been assigned to you. The issue is marked CRITICAL and requires immediate attention.</p>
+<!-- Meta tags -->
+<div class="flex items-center gap-3 pt-1 text-xs font-mono">
+<span class="text-zinc-600">Asset: <strong class="text-black">PROJ-023</strong></span>
+<span class="text-zinc-400">•</span>
+<span class="text-zinc-600">Ticket: <strong class="text-black">#RD-1048</strong></span>
+<span class="text-zinc-400">•</span>
+<span class="bg-[#FE5E1E] text-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">CRITICAL</span>
+</div>
+</div>
+<!-- Action buttons -->
+<div class="flex md:flex-col gap-2 shrink-0 md:w-36">
+<button class="w-full border-brutal-2 bg-[#FE5E1E] text-white shadow-brutal-sm py-2 px-3 font-display font-bold text-xs uppercase hover:brightness-110 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none text-center">
+                VIEW REPAIR
+              </button>
+<button class="w-full border-brutal-2 bg-white text-black shadow-brutal-sm py-2 px-3 font-display font-bold text-xs uppercase hover:bg-neutral-100 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none text-center">
+                MARK AS READ
+              </button>
+</div>
+</div>
+</article>
+<!-- Notification Card 2: Repair Update (UNREAD) -->
+<article class="border-brutal bg-white p-5 shadow-brutal-lg transition-transform hover:-translate-y-0.5">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="space-y-2 max-w-3xl">
+<!-- Meta badges -->
+<div class="flex items-center gap-2 flex-wrap">
+<span class="bg-[#D3F000] text-black border-2 border-black font-display font-bold text-[10px] uppercase px-2 py-0.5 tracking-wider">REPAIR UPDATE</span>
+<span class="bg-black text-[#D3F000] border-2 border-black font-display font-bold text-[10px] uppercase px-2 py-0.5 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#D3F000]"></span>
+                  UNREAD
+                </span>
+<span class="text-[11px] font-mono text-zinc-600 font-bold">09:30 AM (TODAY)</span>
+</div>
+<!-- Title & Content -->
+<h3 class="font-display font-bold text-base text-black">Repair #RD-1038 status updated to IN REPAIR</h3>
+<p class="text-xs text-zinc-700 leading-relaxed">Repair #RD-1038 for Dev Laptop LAP-018 has moved to IN REPAIR.</p>
+<!-- Meta tags -->
+<div class="flex items-center gap-3 pt-1 text-xs font-mono">
+<span class="text-zinc-600">Asset: <strong class="text-black">LAP-018</strong></span>
+<span class="text-zinc-400">•</span>
+<span class="text-zinc-600">Ticket: <strong class="text-black">#RD-1038</strong></span>
+<span class="text-zinc-400">•</span>
+<span class="bg-[#D3F000] text-black px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">STATUS: IN REPAIR</span>
+</div>
+</div>
+<!-- Action buttons -->
+<div class="flex md:flex-col gap-2 shrink-0 md:w-36">
+<button class="w-full border-brutal-2 bg-[#FE5E1E] text-white shadow-brutal-sm py-2 px-3 font-display font-bold text-xs uppercase hover:brightness-110 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none text-center">
+                VIEW REPAIR
+              </button>
+<button class="w-full border-brutal-2 bg-white text-black shadow-brutal-sm py-2 px-3 font-display font-bold text-xs uppercase hover:bg-neutral-100 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none text-center">
+                MARK AS READ
+              </button>
+</div>
+</div>
+</article>
+<!-- Notification Card 3: Urgent Repair (UNREAD) -->
+<article class="border-brutal bg-white p-5 shadow-brutal-lg transition-transform hover:-translate-y-0.5">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="space-y-2 max-w-3xl">
+<!-- Meta badges -->
+<div class="flex items-center gap-2 flex-wrap">
+<span class="bg-[#FE5E1E] text-white border-2 border-black font-display font-bold text-[10px] uppercase px-2 py-0.5 tracking-wider">URGENT REPAIR</span>
+<span class="bg-black text-[#D3F000] border-2 border-black font-display font-bold text-[10px] uppercase px-2 py-0.5 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#D3F000]"></span>
+                  UNREAD
+                </span>
+<span class="text-[11px] font-mono text-zinc-600 font-bold">08:15 AM (TODAY)</span>
+</div>
+<!-- Title & Content -->
+<h3 class="font-display font-bold text-base text-black">Repair #RD-1042 is marked as CRITICAL and requires attention</h3>
+<p class="text-xs text-zinc-700 leading-relaxed">Conference Projector PROJ-023 has been marked CRITICAL and is waiting for technician action.</p>
+<!-- Meta tags -->
+<div class="flex items-center gap-3 pt-1 text-xs font-mono">
+<span class="text-zinc-600">Asset: <strong class="text-black">PROJ-023</strong></span>
+<span class="text-zinc-400">•</span>
+<span class="text-zinc-600">Ticket: <strong class="text-black">#RD-1042</strong></span>
+<span class="text-zinc-400">•</span>
+<span class="bg-[#FE5E1E] text-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">PRIORITY: CRITICAL</span>
+</div>
+</div>
+<!-- Action buttons -->
+<div class="flex md:flex-col gap-2 shrink-0 md:w-36">
+<button class="w-full border-brutal-2 bg-[#FE5E1E] text-white shadow-brutal-sm py-2 px-3 font-display font-bold text-xs uppercase hover:brightness-110 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none text-center">
+                VIEW REPAIR
+              </button>
+<button class="w-full border-brutal-2 bg-white text-black shadow-brutal-sm py-2 px-3 font-display font-bold text-xs uppercase hover:bg-neutral-100 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none text-center">
+                MARK AS READ
+              </button>
+</div>
+</div>
+</article>
+<!-- Notification Card 4: Asset Update (READ) -->
+<article class="border-brutal bg-[#FEF9EF] p-5 shadow-brutal-lg transition-transform hover:-translate-y-0.5">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="space-y-2 max-w-3xl">
+<!-- Meta badges -->
+<div class="flex items-center gap-2 flex-wrap">
+<span class="bg-[#F2EDE3] text-black border-2 border-black font-display font-bold text-[10px] uppercase px-2 py-0.5 tracking-wider">ASSET UPDATE</span>
+<span class="text-zinc-500 font-mono font-bold text-[10px] uppercase flex items-center gap-1">
+<svg class="w-3 h-3 text-zinc-500" fill="currentColor" viewBox="0 0 20 20">
+<path clip-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fill-rule="evenodd"></path>
+</svg>
+                  READ
+                </span>
+<span class="text-[11px] font-mono text-zinc-500">YESTERDAY, 4:15 PM</span>
+</div>
+<!-- Title & Content -->
+<h3 class="font-display font-bold text-base text-black">Asset PROJ-023 has 4 previous repair records</h3>
+<p class="text-xs text-zinc-600 leading-relaxed">Four previous repairs are recorded for this projector. Review the repair history before continuing the current repair.</p>
+<!-- Meta tags -->
+<div class="flex items-center gap-3 pt-1 text-xs font-mono">
+<span class="text-zinc-600">Asset: <strong class="text-black">PROJ-023</strong></span>
+<span class="text-zinc-400">•</span>
+<span class="text-zinc-600">Category: <strong class="text-black">Projector</strong></span>
+<span class="text-zinc-400">•</span>
+<span class="text-zinc-600">Past Repairs: <strong class="text-black">4</strong></span>
+</div>
+</div>
+<!-- Action buttons -->
+<div class="flex md:flex-col gap-2 shrink-0 md:w-36">
+<button class="w-full border-brutal-2 bg-white text-black shadow-brutal-sm py-2 px-3 font-display font-bold text-xs uppercase hover:bg-neutral-100 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none text-center">
+                VIEW ASSET
+              </button>
+</div>
+</div>
+</article>
+<!-- Notification Card 5: Repair Resolved (READ) -->
+<article class="border-brutal bg-[#FEF9EF] p-5 shadow-brutal-lg transition-transform hover:-translate-y-0.5">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="space-y-2 max-w-3xl">
+<!-- Meta badges -->
+<div class="flex items-center gap-2 flex-wrap">
+<span class="bg-[#F2EDE3] text-black border-2 border-black font-display font-bold text-[10px] uppercase px-2 py-0.5 tracking-wider">REPAIR RESOLVED</span>
+<span class="text-zinc-500 font-mono font-bold text-[10px] uppercase flex items-center gap-1">
+<svg class="w-3 h-3 text-zinc-500" fill="currentColor" viewBox="0 0 20 20">
+<path clip-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fill-rule="evenodd"></path>
+</svg>
+                  READ
+                </span>
+<span class="text-[11px] font-mono text-zinc-500">AUG 28, 11:00 AM</span>
+</div>
+<!-- Title & Content -->
+<h3 class="font-display font-bold text-base text-black">Repair #RD-1021 was marked RESOLVED</h3>
+<p class="text-xs text-zinc-600 leading-relaxed">The projector repair was completed successfully and the ticket was resolved.</p>
+<!-- Meta tags -->
+<div class="flex items-center gap-3 pt-1 text-xs font-mono">
+<span class="text-zinc-600">Asset: <strong class="text-black">PROJ-023</strong></span>
+<span class="text-zinc-400">•</span>
+<span class="text-zinc-600">Ticket: <strong class="text-black">#RD-1021</strong></span>
+<span class="text-zinc-400">•</span>
+<span class="text-zinc-600">Status: <strong class="text-black">RESOLVED</strong></span>
+</div>
+</div>
+<!-- Action buttons -->
+<div class="flex md:flex-col gap-2 shrink-0 md:w-36">
+<button class="w-full border-brutal-2 bg-white text-black shadow-brutal-sm py-2 px-3 font-display font-bold text-xs uppercase hover:bg-neutral-100 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none text-center">
+                VIEW DETAILS
+              </button>
+</div>
+</div>
+</article>
+</section>
+<!-- END: NotificationListContainer -->
+<!-- BEGIN: WebMcpTelemetryTerminal -->
+<section class="border-brutal bg-black text-[#FEF9EF] shadow-brutal-lg p-5 font-mono" data-purpose="agent-telemetry">
+<!-- Terminal Header -->
+<div class="flex items-center justify-between pb-3 border-b border-zinc-800 text-xs mb-3">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-[#D3F000] inline-block animate-pulse"></span>
+<span class="font-bold tracking-wider text-white">WEBMCP AGENT ACTIVITY — LIVE TELEMETRY</span>
+</div>
+<span class="text-[10px] text-zinc-400 font-normal">SYNCED WITH HQ DISPATCH</span>
+</div>
+<!-- Terminal Log Rows -->
+<div class="space-y-1.5 text-xs text-zinc-300">
+<div class="flex items-start gap-2">
+<span class="text-[#D3F000] font-bold">10:42 AM</span>
+<span class="text-zinc-400">&gt;</span>
+<span class="">Agent opened <span class="text-[#FE5E1E] font-bold">#RD-1048</span> repair</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="text-[#D3F000] font-bold">10:44 AM</span>
+<span class="text-zinc-400">&gt;</span>
+<span class="">Agent retrieved <span class="text-white font-bold">PROJ-023</span> repair history</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="text-[#D3F000] font-bold">10:45 AM</span>
+<span class="text-zinc-400">&gt;</span>
+<span class="">Agent checked warranty status</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="text-[#D3F000] font-bold">10:46 AM</span>
+<span class="text-zinc-400">&gt;</span>
+<span class="text-[#FE5E1E] font-bold">Human approval required for repair update</span>
+</div>
+</div>
+</section>
+<!-- END: WebMcpTelemetryTerminal -->
+</div>
+</main>
+<!-- END: MainContent -->
+
+
+</body></html>

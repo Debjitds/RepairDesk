@@ -1,0 +1,177 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>My Issues - RepairDesk</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Space+Grotesk:wght@600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed-variant": "#832700",
+                        "tertiary-fixed-dim": "#b9d300",
+                        "outline-variant": "#c4c7c7",
+                        "surface-container-high": "#ede8de",
+                        "secondary": "#ab3600",
+                        "on-background": "#1d1c16",
+                        "on-secondary-fixed": "#390c00",
+                        "surface-container": "#f2ede3",
+                        "on-tertiary-fixed": "#191e00",
+                        "inverse-primary": "#c8c6c5",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed-dim": "#c8c6c5",
+                        "on-primary-fixed-variant": "#474746",
+                        "on-tertiary-fixed-variant": "#414c00",
+                        "on-secondary-container": "#551600",
+                        "on-surface": "#1d1c16",
+                        "on-primary": "#ffffff",
+                        "primary-container": "#1c1b1b",
+                        "secondary-fixed": "#ffdbcf",
+                        "secondary-container": "#fe5e1e",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#f8f3e9",
+                        "inverse-on-surface": "#f5f0e6",
+                        "surface-container-highest": "#e7e2d8",
+                        "inverse-surface": "#32302a",
+                        "on-primary-container": "#858383",
+                        "error": "#ba1a1a",
+                        "tertiary": "#000000",
+                        "on-tertiary-container": "#7a8c00",
+                        "surface-bright": "#fef9ef",
+                        "secondary-fixed-dim": "#ffb59c",
+                        "on-error-container": "#93000a",
+                        "surface-tint": "#5f5e5e",
+                        "outline": "#747878",
+                        "on-primary-fixed": "#1c1b1b",
+                        "primary": "#000000",
+                        "on-surface-variant": "#444748",
+                        "surface-dim": "#dedad0",
+                        "tertiary-container": "#191e00",
+                        "primary-fixed": "#e5e2e1",
+                        "background": "#fef9ef",
+                        "surface-container-lowest": "#ffffff",
+                        "surface": "#fef9ef",
+                        "tertiary-fixed": "#d3f000",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#e7e2d8",
+                        
+                        // Custom Accents based on prompt
+                        "signal-orange": "#ff5722",
+                        "electric-yellow": "#eaff00",
+                        "warm-cream": "#f2ede3", // using surface-container as warm-cream
+                        "near-black": "#1A1A1A"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "48px",
+                        "container-max": "1280px",
+                        "stack-md": "16px",
+                        "base": "8px",
+                        "stack-lg": "32px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Space Grotesk"],
+                        "headline-lg-mobile": ["Space Grotesk"],
+                        "headline-md": ["Space Grotesk"],
+                        "display-lg": ["Space Grotesk"],
+                        "label-caps": ["Space Grotesk"],
+                        "mono-label": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "headline-md": ["32px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "display-lg": ["72px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+                        "label-caps": ["14px", { "lineHeight": "1.2", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "mono-label": ["12px", { "lineHeight": "1.0", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .neo-brutalist-border { border: 3px solid #000; }
+        .neo-brutalist-border-b { border-bottom: 3px solid #000; }
+        .neo-brutalist-border-r { border-right: 3px solid #000; }
+        .neo-brutalist-border-t { border-top: 3px solid #000; }
+        .neo-brutalist-shadow { box-shadow: 4px 4px 0px 0px rgba(26, 26, 26, 1); }
+        .neo-brutalist-shadow-hover:hover { 
+            box-shadow: 0px 0px 0px 0px rgba(26, 26, 26, 1); 
+            transform: translate(4px, 4px);
+        }
+        .neo-brutalist-shadow-active:active {
+            box-shadow: 0px 0px 0px 0px rgba(26, 26, 26, 1); 
+            transform: translate(4px, 4px);
+        }
+        
+        .dotted-bg {
+            background-image: radial-gradient(#1A1A1A 1px, transparent 1px);
+            background-size: 16px 16px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen flex" style="background-image: radial-gradient(#1A1A1A 1px, transparent 0); background-size: 24px 24px;">
+<!-- SideNavBar -->
+<aside class="bg-surface dark:bg-surface text-primary dark:text-on-surface fixed top-0 left-0 h-screen w-64 z-50 border-r-[3px] border-tertiary dark:border-outline flex flex-col justify-between min-h-screen" style="bottom: 0px;">
+<div class="p-stack-md">
+<div class="font-headline-md text-[28px] font-black tracking-tighter text-primary dark:text-on-surface mb-stack-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-[32px]">precision_manufacturing</span>
+            RepairDesk
+        </div>
+<div class="flex flex-col gap-stack-sm font-label-caps text-label-caps"><a class="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-highest border-2 border-transparent hover:border-primary transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]">dashboard</span> Dashboard</a><a class="flex items-center gap-3 px-4 py-3 bg-tertiary text-surface border-2 border-primary shadow-[4px_4px_0px_0px_rgba(29,28,22,1)] font-bold transition-colors duration-200" href="#"><span class="material-symbols-outlined text-[20px]">report_problem</span> My Issues</a><a class="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-highest border-2 border-transparent hover:border-primary transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]">precision_manufacturing</span> My Assets</a><a class="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-highest border-2 border-transparent hover:border-primary transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]">notifications</span> Notifications</a><a class="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-highest border-2 border-transparent hover:border-primary transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]">settings</span> Settings</a></div>
+</div>
+<div class="flex items-center gap-3 p-4 border-t-2 border-primary bg-surface-container-low">
+<div class="w-10 h-10 rounded-full border-2 border-primary overflow-hidden bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary-container">person</span>
+</div>
+<div class="flex-grow">
+<div class="font-bold text-primary text-[14px] leading-tight">Alex Rivera</div>
+<div class="text-on-surface-variant text-[12px] font-label-caps uppercase tracking-wider">EMPLOYEE</div>
+</div>
+<button class="hover:text-secondary transition-colors">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 flex-1 flex flex-col min-h-screen">
+<!-- TopAppBar Context -->
+<header class="sticky top-0 z-40 flex justify-between items-center px-margin-desktop py-6 bg-transparent">
+<div><h1 class="font-headline-lg text-4xl font-black uppercase tracking-tight text-primary">MY ISSUES</h1><p class="font-body-md text-sm text-on-surface-variant font-mono-label mt-1">Track every repair request you've submitted • Live updates &amp; technician progress</p></div>
+<button class="bg-signal-orange text-black font-label-caps text-sm font-bold uppercase px-5 py-2.5 border-2 border-primary shadow-[4px_4px_0px_0px_rgba(29,28,22,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all duration-100 flex items-center gap-2 cursor-pointer">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: &quot;FILL&quot; 1;">add_circle</span>
++ REPORT AN ISSUE
+</button>
+</header>
+<div class="p-margin-desktop space-y-gutter flex-1">
+<!-- KPI Cards Row -->
+<div class="grid grid-cols-4 gap-gutter"><div class="bg-warm-cream p-6 neo-brutalist-border neo-brutalist-shadow flex flex-col justify-between h-32"><div class="font-label-caps text-label-caps uppercase text-on-surface-variant">MY OPEN ISSUES</div><div class="font-display-lg text-display-lg text-primary">2</div></div><div class="bg-signal-orange p-6 neo-brutalist-border neo-brutalist-shadow flex flex-col justify-between h-32"><div class="font-label-caps text-label-caps uppercase text-black font-bold">IN REPAIR</div><div class="font-display-lg text-display-lg text-black font-bold">1</div></div><div class="bg-warm-cream p-6 neo-brutalist-border neo-brutalist-shadow flex flex-col justify-between h-32"><div class="font-label-caps text-label-caps uppercase text-on-surface-variant">WAITING</div><div class="font-display-lg text-display-lg text-primary">1</div></div><div class="bg-electric-yellow p-6 neo-brutalist-border neo-brutalist-shadow flex flex-col justify-between h-32"><div class="font-label-caps text-label-caps uppercase text-black font-bold">RESOLVED</div><div class="font-display-lg text-display-lg text-black font-bold">4</div></div></div>
+<!-- Main Content Grid -->
+<div class="space-y-gutter"><div class="bg-warm-cream neo-brutalist-border neo-brutalist-shadow p-4 flex flex-wrap items-center justify-between gap-4"><div class="flex items-center gap-3 flex-1 min-w-[280px]"><div class="relative flex-1"><span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-[20px]">search</span><input class="w-full bg-white neo-brutalist-border pl-10 pr-4 py-2 font-mono-label text-sm text-primary placeholder-on-surface-variant focus:outline-none" placeholder="Search issue, asset, or ticket..." type="text" value=""></div><button class="px-3 py-2 bg-white neo-brutalist-border font-label-caps text-xs uppercase flex items-center gap-1 hover:bg-surface-container-highest"><span class="material-symbols-outlined text-[16px]">tune</span> Filter</button></div><div class="flex items-center gap-2 flex-wrap"><span class="font-mono-label text-xs uppercase text-on-surface-variant font-bold mr-1">STATUS:</span><button class="px-3 py-1.5 bg-tertiary text-white neo-brutalist-border font-label-caps text-xs uppercase font-bold">ALL (7)</button><button class="px-3 py-1.5 bg-white text-black neo-brutalist-border font-label-caps text-xs uppercase hover:bg-surface-container-highest">OPEN (2)</button><button class="px-3 py-1.5 bg-signal-orange text-black neo-brutalist-border font-label-caps text-xs uppercase font-bold">IN REPAIR (1)</button><button class="px-3 py-1.5 bg-electric-yellow text-black neo-brutalist-border font-label-caps text-xs uppercase font-bold">RESOLVED (4)</button></div></div><div class="bg-warm-cream neo-brutalist-border neo-brutalist-shadow overflow-hidden"><div class="p-4 neo-brutalist-border-b bg-primary text-white flex justify-between items-center"><h2 class="font-headline-md text-headline-md">MY REPAIR ISSUES</h2><div class="font-mono-label text-xs uppercase tracking-wider text-warm-cream">SHOWING 5 ACTIVE / RECENT REQUESTS</div></div><div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="bg-electric-yellow neo-brutalist-border-b text-black font-label-caps text-label-caps uppercase"><th class="p-4">Ticket ID</th><th class="p-4">Asset</th><th class="p-4">Issue</th><th class="p-4">Priority</th><th class="p-4">Status</th><th class="p-4">Technician</th><th class="p-4">Date</th><th class="p-4 text-center">Action</th></tr></thead><tbody class="font-body-md text-body-md divide-y divide-black"><tr class="bg-surface-container-low hover:bg-near-black hover:text-warm-cream group transition-colors"><td class="p-4 font-mono-label font-bold text-primary group-hover:text-warm-cream">#RD-1048</td><td class="p-4 font-mono-label text-xs"><div class="font-bold">LAP-018</div><div class="text-on-surface-variant group-hover:text-gray-400 text-[11px]">Dell Latitude 7450</div></td><td class="p-4 font-bold">Overheating Issue</td><td class="p-4"><span class="inline-block px-2.5 py-0.5 bg-white text-secondary neo-brutalist-border font-mono-label text-[11px] font-bold uppercase">HIGH</span></td><td class="p-4"><span class="inline-block px-3 py-1 bg-signal-orange text-black neo-brutalist-border font-label-caps text-[10px] font-bold uppercase">IN REPAIR</span></td><td class="p-4 font-mono-label text-xs"><div class="font-bold">Priya Sharma</div><div class="text-on-surface-variant group-hover:text-gray-400 text-[10px]">Hardware Tech</div></td><td class="p-4 font-mono-label text-xs">Sep 1</td><td class="p-4 text-center"><button class="bg-white group-hover:bg-warm-cream group-hover:text-black text-primary px-3 py-1 neo-brutalist-border font-label-caps text-[11px] uppercase font-bold shadow-[2px_2px_0px_0px_rgba(29,28,22,1)]">DETAILS</button></td></tr><tr class="hover:bg-near-black hover:text-warm-cream group transition-colors"><td class="p-4 font-mono-label font-bold text-primary group-hover:text-warm-cream">#RD-1042</td><td class="p-4 font-mono-label text-xs"><div class="font-bold">PROJ-023</div><div class="text-on-surface-variant group-hover:text-gray-400 text-[11px]">Conf Projector 4B</div></td><td class="p-4 font-bold">Lamp failure / flicker</td><td class="p-4"><span class="inline-block px-2.5 py-0.5 bg-signal-orange text-black neo-brutalist-border font-mono-label text-[11px] font-bold uppercase">CRITICAL</span></td><td class="p-4"><span class="inline-block px-3 py-1 bg-white text-black neo-brutalist-border font-label-caps text-[10px] font-bold uppercase">OPEN</span></td><td class="p-4 font-mono-label text-xs"><div class="text-error font-bold">Unassigned</div><div class="text-on-surface-variant group-hover:text-gray-400 text-[10px]">Pending Dispatch</div></td><td class="p-4 font-mono-label text-xs">Sep 2</td><td class="p-4 text-center"><button class="bg-white group-hover:bg-warm-cream group-hover:text-black text-primary px-3 py-1 neo-brutalist-border font-label-caps text-[11px] uppercase font-bold shadow-[2px_2px_0px_0px_rgba(29,28,22,1)]">DETAILS</button></td></tr><tr class="hover:bg-near-black hover:text-warm-cream group transition-colors"><td class="p-4 font-mono-label font-bold text-primary group-hover:text-warm-cream">#RD-1027</td><td class="p-4 font-mono-label text-xs"><div class="font-bold">MON-044</div><div class="text-on-surface-variant group-hover:text-gray-400 text-[11px]">Dell 27" 4K Ultra</div></td><td class="p-4 font-bold">Screen Flickering</td><td class="p-4"><span class="inline-block px-2.5 py-0.5 bg-white text-primary neo-brutalist-border font-mono-label text-[11px] font-bold uppercase">MEDIUM</span></td><td class="p-4"><span class="inline-block px-3 py-1 bg-electric-yellow text-black neo-brutalist-border font-label-caps text-[10px] font-bold uppercase">RESOLVED</span></td><td class="p-4 font-mono-label text-xs"><div class="font-bold">Rahul Sharma</div><div class="text-on-surface-variant group-hover:text-gray-400 text-[10px]">Display Tech</div></td><td class="p-4 font-mono-label text-xs">Aug 28</td><td class="p-4 text-center"><button class="bg-white group-hover:bg-warm-cream group-hover:text-black text-primary px-3 py-1 neo-brutalist-border font-label-caps text-[11px] uppercase font-bold shadow-[2px_2px_0px_0px_rgba(29,28,22,1)]">DETAILS</button></td></tr><tr class="hover:bg-near-black hover:text-warm-cream group transition-colors"><td class="p-4 font-mono-label font-bold text-primary group-hover:text-warm-cream">#RD-1018</td><td class="p-4 font-mono-label text-xs"><div class="font-bold">MOB-011</div><div class="text-on-surface-variant group-hover:text-gray-400 text-[11px]">iPhone 13 Enterprise</div></td><td class="p-4 font-bold">Battery draining fast</td><td class="p-4"><span class="inline-block px-2.5 py-0.5 bg-white text-outline font-mono-label text-[11px] font-bold uppercase border border-black">LOW</span></td><td class="p-4"><span class="inline-block px-3 py-1 bg-surface-container-highest text-on-surface-variant neo-brutalist-border font-label-caps text-[10px] font-bold uppercase">CLOSED</span></td><td class="p-4 font-mono-label text-xs"><div class="font-bold">Aman Das</div><div class="text-on-surface-variant group-hover:text-gray-400 text-[10px]">Mobile Systems</div></td><td class="p-4 font-mono-label text-xs">Aug 25</td><td class="p-4 text-center"><button class="bg-white group-hover:bg-warm-cream group-hover:text-black text-primary px-3 py-1 neo-brutalist-border font-label-caps text-[11px] uppercase font-bold shadow-[2px_2px_0px_0px_rgba(29,28,22,1)]">DETAILS</button></td></tr><tr class="hover:bg-near-black hover:text-warm-cream group transition-colors"><td class="p-4 font-mono-label font-bold text-primary group-hover:text-warm-cream">#RD-1004</td><td class="p-4 font-mono-label text-xs"><div class="font-bold">LAP-018</div><div class="text-on-surface-variant group-hover:text-gray-400 text-[11px]">Dell Latitude 7450</div></td><td class="p-4 font-bold">Keyboard key stuck (Spacebar)</td><td class="p-4"><span class="inline-block px-2.5 py-0.5 bg-white text-primary neo-brutalist-border font-mono-label text-[11px] font-bold uppercase">MEDIUM</span></td><td class="p-4"><span class="inline-block px-3 py-1 bg-surface-container-highest text-on-surface-variant neo-brutalist-border font-label-caps text-[10px] font-bold uppercase">CLOSED</span></td><td class="p-4 font-mono-label text-xs"><div class="font-bold">Priya Sharma</div><div class="text-on-surface-variant group-hover:text-gray-400 text-[10px]">Hardware Tech</div></td><td class="p-4 font-mono-label text-xs">Aug 10</td><td class="p-4 text-center"><button class="bg-white group-hover:bg-warm-cream group-hover:text-black text-primary px-3 py-1 neo-brutalist-border font-label-caps text-[11px] uppercase font-bold shadow-[2px_2px_0px_0px_rgba(29,28,22,1)]">DETAILS</button></td></tr></tbody></table></div></div><div class="grid grid-cols-12 gap-gutter"><div class="col-span-7 bg-warm-cream neo-brutalist-border neo-brutalist-shadow flex flex-col"><div class="p-4 neo-brutalist-border-b bg-white flex justify-between items-center"><div><span class="font-mono-label text-xs uppercase text-on-surface-variant font-bold">SELECTED CONTEXT</span><h3 class="font-headline-md text-[22px] font-bold leading-none mt-0.5">TICKET #RD-1048</h3></div><span class="inline-block px-3 py-1 bg-signal-orange text-black neo-brutalist-border font-label-caps text-xs font-bold uppercase">IN REPAIR</span></div><div class="p-6 space-y-4"><div class="grid grid-cols-2 gap-4 bg-white p-4 neo-brutalist-border"><div><div class="font-label-caps text-[11px] text-on-surface-variant uppercase">Target Asset</div><div class="font-headline-md text-[16px] font-bold mt-0.5">LAP-018 — Dell Latitude 7450</div></div><div><div class="font-label-caps text-[11px] text-on-surface-variant uppercase">Issue Description</div><div class="font-body-md text-sm mt-0.5">Laptop throttles and overheats heavily under standard multi-tab usage.</div></div></div><div class="flex items-center gap-4 bg-white p-4 neo-brutalist-border"><img alt="Priya Sharma" class="w-12 h-12 neo-brutalist-border object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdp8HhibgawQmuTQEWXbZquSMnncpTdwKs3O4VVorVjzdiWwXX50rgSOs5WCY8SA6UKmap4X-rlrQgP3v_praducLUM-On4mwAkXOfy_2HaJVfzirQ_kBnzYS1OZKPQ5mfiPa9Aq9wvOjIzcFpa-afULZHFhcFuL5u3xauZbGUHwvV0KpjPgF7ke3mWCUcRn32fuf2hwPl45n4Pfew1aHpihCyFWS_5K_4ODjH9uw9jH4XjsTIWl5JBA"><div class="flex-1"><div class="font-label-caps text-[10px] uppercase text-signal-orange font-bold">Assigned Technician</div><div class="font-headline-md text-[16px] font-bold">Priya Sharma</div><div class="font-mono-label text-[11px] text-on-surface-variant">Hardware Specialist • Active on Bench 2</div></div><span class="material-symbols-outlined text-signal-orange text-[28px]">engineering</span></div><div><div class="font-label-caps text-xs uppercase font-bold mb-3">Live Repair Progress</div><div class="space-y-3 pl-2"><div class="flex gap-3 items-start"><div class="flex flex-col items-center mt-1"><div class="w-3 h-3 bg-tertiary neo-brutalist-border"></div><div class="w-0.5 h-6 bg-black"></div></div><div><div class="font-mono-label text-[10px] text-on-surface-variant">10:12 AM</div><div class="text-xs font-bold">Issue reported by Alex Rivera</div></div></div><div class="flex gap-3 items-start"><div class="flex flex-col items-center mt-1"><div class="w-3 h-3 bg-tertiary neo-brutalist-border"></div><div class="w-0.5 h-6 bg-black"></div></div><div><div class="font-mono-label text-[10px] text-on-surface-variant">10:30 AM</div><div class="text-xs font-bold">Assigned to Priya Sharma</div></div></div><div class="flex gap-3 items-start"><div class="flex flex-col items-center mt-1"><div class="w-3.5 h-3.5 bg-signal-orange neo-brutalist-border animate-pulse"></div></div><div><div class="font-mono-label text-[10px] text-signal-orange font-bold">11:05 AM (IN PROGRESS)</div><div class="text-xs font-bold text-primary">Thermal paste reapplication &amp; heatsink cleaning</div></div></div></div></div></div></div><div class="col-span-5 bg-tertiary text-warm-cream neo-brutalist-border neo-brutalist-shadow flex flex-col justify-between p-6"><div class="border-b-2 border-warm-cream pb-3 flex justify-between items-center"><div class="flex items-center gap-2"><span class="w-3 h-3 bg-electric-yellow neo-brutalist-border inline-block"></span><h3 class="font-headline-md text-[18px] text-white tracking-tight">WEBMCP REPAIR ACTIVITY</h3></div><span class="font-mono-label text-[10px] text-electric-yellow font-bold uppercase">LIVE FEED</span></div><div class="py-4 space-y-3 font-mono-label text-xs"><div class="flex gap-2 text-surface-variant"><span class="text-electric-yellow font-bold">10:42 AM &gt;</span><span class="">Agent verified Dell Latitude 7450 warranty status</span></div><div class="flex gap-2 text-surface-variant"><span class="text-electric-yellow font-bold">10:44 AM &gt;</span><span class="">Telemetry logs pulled: CPU core exceeded 98°C</span></div><div class="flex gap-2 text-surface-variant"><span class="text-electric-yellow font-bold">10:46 AM &gt;</span><span class="">Automated ticket dispatch forwarded to Hardware Lab</span></div><div class="flex gap-2 text-surface-variant"><span class="text-electric-yellow font-bold">11:15 AM &gt;</span><span class="">Replacement copper thermal pad confirmed in parts inventory</span></div><div class="flex gap-2 text-electric-yellow"><span class="font-bold">11:24 AM &gt;</span><span class="animate-pulse">Running thermal stress benchmark test...</span></div></div><div class="bg-near-black p-3 border border-outline font-mono-label text-[11px] text-white flex justify-between items-center"><span class="">Ticket ID: #RD-1048</span><span class="text-electric-yellow">Status: SYNCED</span></div></div></div></div>
+<!-- Dark Activity Log (WebMCP Activity) -->
+</div>
+</main>
+
+
+</body></html>

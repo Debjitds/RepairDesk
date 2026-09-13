@@ -1,0 +1,177 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>My Assets - RepairDesk</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Space+Grotesk:wght@600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed-variant": "#832700",
+                        "tertiary-fixed-dim": "#b9d300",
+                        "outline-variant": "#c4c7c7",
+                        "surface-container-high": "#ede8de",
+                        "secondary": "#ab3600",
+                        "on-background": "#1d1c16",
+                        "on-secondary-fixed": "#390c00",
+                        "surface-container": "#f2ede3",
+                        "on-tertiary-fixed": "#191e00",
+                        "inverse-primary": "#c8c6c5",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed-dim": "#c8c6c5",
+                        "on-primary-fixed-variant": "#474746",
+                        "on-tertiary-fixed-variant": "#414c00",
+                        "on-secondary-container": "#551600",
+                        "on-surface": "#1d1c16",
+                        "on-primary": "#ffffff",
+                        "primary-container": "#1c1b1b",
+                        "secondary-fixed": "#ffdbcf",
+                        "secondary-container": "#fe5e1e",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#f8f3e9",
+                        "inverse-on-surface": "#f5f0e6",
+                        "surface-container-highest": "#e7e2d8",
+                        "inverse-surface": "#32302a",
+                        "on-primary-container": "#858383",
+                        "error": "#ba1a1a",
+                        "tertiary": "#000000",
+                        "on-tertiary-container": "#7a8c00",
+                        "surface-bright": "#fef9ef",
+                        "secondary-fixed-dim": "#ffb59c",
+                        "on-error-container": "#93000a",
+                        "surface-tint": "#5f5e5e",
+                        "outline": "#747878",
+                        "on-primary-fixed": "#1c1b1b",
+                        "primary": "#000000",
+                        "on-surface-variant": "#444748",
+                        "surface-dim": "#dedad0",
+                        "tertiary-container": "#191e00",
+                        "primary-fixed": "#e5e2e1",
+                        "background": "#fef9ef",
+                        "surface-container-lowest": "#ffffff",
+                        "surface": "#fef9ef",
+                        "tertiary-fixed": "#d3f000",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#e7e2d8",
+                        
+                        // Custom Accents based on prompt
+                        "signal-orange": "#ff5722",
+                        "electric-yellow": "#eaff00",
+                        "warm-cream": "#f2ede3", // using surface-container as warm-cream
+                        "near-black": "#1A1A1A"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "48px",
+                        "container-max": "1280px",
+                        "stack-md": "16px",
+                        "base": "8px",
+                        "stack-lg": "32px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Space Grotesk"],
+                        "headline-lg-mobile": ["Space Grotesk"],
+                        "headline-md": ["Space Grotesk"],
+                        "display-lg": ["Space Grotesk"],
+                        "label-caps": ["Space Grotesk"],
+                        "mono-label": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "headline-md": ["32px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "display-lg": ["72px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+                        "label-caps": ["14px", { "lineHeight": "1.2", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "mono-label": ["12px", { "lineHeight": "1.0", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .neo-brutalist-border { border: 3px solid #000; }
+        .neo-brutalist-border-b { border-bottom: 3px solid #000; }
+        .neo-brutalist-border-r { border-right: 3px solid #000; }
+        .neo-brutalist-border-t { border-top: 3px solid #000; }
+        .neo-brutalist-shadow { box-shadow: 4px 4px 0px 0px rgba(26, 26, 26, 1); }
+        .neo-brutalist-shadow-hover:hover { 
+            box-shadow: 0px 0px 0px 0px rgba(26, 26, 26, 1); 
+            transform: translate(4px, 4px);
+        }
+        .neo-brutalist-shadow-active:active {
+            box-shadow: 0px 0px 0px 0px rgba(26, 26, 26, 1); 
+            transform: translate(4px, 4px);
+        }
+        
+        .dotted-bg {
+            background-image: radial-gradient(#1A1A1A 1px, transparent 1px);
+            background-size: 16px 16px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen flex" style="background-image: radial-gradient(#1A1A1A 1px, transparent 0); background-size: 24px 24px;">
+<!-- SideNavBar -->
+<aside class="bg-surface dark:bg-surface text-primary dark:text-on-surface fixed top-0 left-0 h-screen w-64 z-50 border-r-[3px] border-tertiary dark:border-outline flex flex-col justify-between min-h-screen" style="bottom: 0px;">
+<div class="p-stack-md">
+<div class="font-headline-md text-[28px] font-black tracking-tighter text-primary dark:text-on-surface mb-stack-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-[32px]">precision_manufacturing</span>
+            RepairDesk
+        </div>
+<div class="flex flex-col gap-stack-sm font-label-caps text-label-caps"><a class="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-highest border-2 border-transparent hover:border-primary transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]">dashboard</span> Dashboard</a><a class="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-highest border-2 border-transparent hover:border-primary transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]">report_problem</span> My Issues</a><a class="flex items-center gap-3 px-4 py-3 bg-tertiary text-surface border-2 border-primary shadow-[4px_4px_0px_0px_rgba(29,28,22,1)] font-bold transition-colors duration-200" href="#"><span class="material-symbols-outlined text-[20px]">precision_manufacturing</span> My Assets</a><a class="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-highest border-2 border-transparent hover:border-primary transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]">notifications</span> Notifications</a><a class="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-highest border-2 border-transparent hover:border-primary transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]">settings</span> Settings</a></div>
+</div>
+<div class="flex items-center gap-3 p-4 border-t-2 border-primary bg-surface-container-low">
+<div class="w-10 h-10 rounded-full border-2 border-primary overflow-hidden bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary-container">person</span>
+</div>
+<div class="flex-grow">
+<div class="font-bold text-primary text-[14px] leading-tight">Alex Rivera</div>
+<div class="text-on-surface-variant text-[12px] font-label-caps uppercase tracking-wider">EMPLOYEE</div>
+</div>
+<button class="hover:text-secondary transition-colors">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 flex-1 flex flex-col min-h-screen">
+<!-- TopAppBar Context -->
+<header class="sticky top-0 z-40 flex justify-between items-center px-margin-desktop py-6 bg-transparent">
+<div><h1 class="font-headline-lg text-4xl font-black uppercase tracking-tight text-primary">MY ASSETS</h1><p class="font-body-md text-sm text-on-surface-variant font-mono-label mt-1">Equipment currently assigned to you. Live status &amp; warranty overview.</p></div>
+<button class="bg-signal-orange text-black font-label-caps text-sm font-bold uppercase px-5 py-2.5 border-2 border-primary shadow-[4px_4px_0px_0px_rgba(29,28,22,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all duration-100 flex items-center gap-2 cursor-pointer">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: &quot;FILL&quot; 1;">add_circle</span>
++ REPORT AN ISSUE
+</button>
+</header>
+<div class="p-margin-desktop space-y-gutter flex-1">
+<!-- KPI Cards Row -->
+<div class="bg-surface-container-low border-2 border-primary p-4 shadow-[4px_4px_0px_0px_rgba(29,28,22,1)] space-y-3"><div class="flex flex-wrap items-center justify-between gap-3"><div class="flex items-center gap-2 flex-1 min-w-[280px]"><div class="relative flex-1"><span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-[20px]">search</span><input class="w-full bg-white border-2 border-primary pl-10 pr-4 py-2 font-mono-label text-sm text-primary placeholder-on-surface-variant focus:outline-none" placeholder="Search asset name or ID..." type="text" value=""></div><button class="px-3 py-2 bg-white border-2 border-primary font-label-caps text-xs uppercase flex items-center gap-1 hover:bg-surface-container-highest cursor-pointer"><span class="material-symbols-outlined text-[16px]">tune</span> Filter</button></div></div><div class="flex flex-wrap items-center gap-x-6 gap-y-2 border-t-2 border-primary pt-3"><div class="flex items-center gap-2 flex-wrap"><span class="font-mono-label text-xs uppercase text-on-surface-variant font-bold">STATUS:</span><button class="px-3 py-1 bg-tertiary text-white border-2 border-primary font-label-caps text-xs uppercase font-bold cursor-pointer">ALL</button><button class="px-3 py-1 bg-white text-black border-2 border-primary font-label-caps text-xs uppercase hover:bg-surface-container-highest cursor-pointer">ACTIVE (2)</button><button class="px-3 py-1 bg-signal-orange text-black border-2 border-primary font-label-caps text-xs uppercase font-bold cursor-pointer">IN REPAIR (1)</button><button class="px-3 py-1 bg-white text-black border-2 border-primary font-label-caps text-xs uppercase hover:bg-surface-container-highest cursor-pointer">RETIRED (0)</button></div><div class="flex items-center gap-2 flex-wrap"><span class="font-mono-label text-xs uppercase text-on-surface-variant font-bold">CATEGORY:</span><button class="px-3 py-1 bg-white text-black border-2 border-primary font-label-caps text-xs uppercase hover:bg-surface-container-highest cursor-pointer">LAPTOP</button><button class="px-3 py-1 bg-white text-black border-2 border-primary font-label-caps text-xs uppercase hover:bg-surface-container-highest cursor-pointer">MONITOR</button><button class="px-3 py-1 bg-white text-black border-2 border-primary font-label-caps text-xs uppercase hover:bg-surface-container-highest cursor-pointer">PHONE</button></div></div></div>
+<!-- Main Content Grid -->
+<div class="space-y-gutter"><div class="p-4 neo-brutalist-border-b bg-primary text-white flex justify-between items-center"><h2 class="font-headline-md text-headline-md">ASSIGNED ASSETS</h2><div class="font-mono-label text-xs uppercase tracking-wider text-warm-cream">SHOWING 3 ASSIGNED DEVICES</div></div><div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="bg-electric-yellow neo-brutalist-border-b text-black font-label-caps text-label-caps uppercase"><th class="p-4">Asset</th><th class="p-4">Asset ID</th><th class="p-4">Category</th><th class="p-4">Status</th><th class="p-4">Warranty</th><th class="p-4">Location</th><th class="p-4">Assigned</th><th class="p-4 text-center">Action</th></tr></thead><tbody class="font-body-md text-body-md divide-y divide-black"><tr class="bg-surface-container-low hover:bg-near-black hover:text-warm-cream group transition-colors"><td class="p-4"><div class="font-bold text-primary group-hover:text-warm-cream">Dell Latitude 7450</div><div class="font-mono-label text-[11px] text-on-surface-variant group-hover:text-gray-400">Intel Core i7, 32GB RAM</div></td><td class="p-4 font-mono-label font-bold text-primary group-hover:text-warm-cream">LAP-018</td><td class="p-4 font-mono-label text-xs uppercase">Laptop</td><td class="p-4"><span class="inline-block px-3 py-1 bg-signal-orange text-black neo-brutalist-border font-label-caps text-[10px] font-bold uppercase">IN REPAIR</span></td><td class="p-4"><span class="inline-block px-2.5 py-0.5 bg-black text-white neo-brutalist-border font-mono-label text-[11px] font-bold uppercase">EXPIRED</span></td><td class="p-4 font-mono-label text-xs">Marketing Dept</td><td class="p-4 font-mono-label text-xs font-bold">You</td><td class="p-4 text-center"><button class="bg-white group-hover:bg-warm-cream group-hover:text-black text-primary px-3 py-1 neo-brutalist-border font-label-caps text-[11px] uppercase font-bold shadow-[2px_2px_0px_0px_rgba(29,28,22,1)]">VIEW</button></td></tr><tr class="hover:bg-near-black hover:text-warm-cream group transition-colors"><td class="p-4"><div class="font-bold text-primary group-hover:text-warm-cream">Dell UltraSharp 27"</div><div class="font-mono-label text-[11px] text-on-surface-variant group-hover:text-gray-400">4K UHD USB-C Hub Monitor</div></td><td class="p-4 font-mono-label font-bold text-primary group-hover:text-warm-cream">MON-044</td><td class="p-4 font-mono-label text-xs uppercase">Monitor</td><td class="p-4"><span class="inline-block px-3 py-1 bg-electric-yellow text-black neo-brutalist-border font-label-caps text-[10px] font-bold uppercase">ACTIVE</span></td><td class="p-4"><span class="inline-block px-2.5 py-0.5 bg-signal-orange text-black neo-brutalist-border font-mono-label text-[11px] font-bold uppercase">Sep 14, 2026</span></td><td class="p-4 font-mono-label text-xs">Desk B-14 (HQ)</td><td class="p-4 font-mono-label text-xs font-bold">You</td><td class="p-4 text-center"><button class="bg-white group-hover:bg-warm-cream group-hover:text-black text-primary px-3 py-1 neo-brutalist-border font-label-caps text-[11px] uppercase font-bold shadow-[2px_2px_0px_0px_rgba(29,28,22,1)]">VIEW</button></td></tr><tr class="hover:bg-near-black hover:text-warm-cream group transition-colors"><td class="p-4"><div class="font-bold text-primary group-hover:text-warm-cream">iPhone 13 Enterprise</div><div class="font-mono-label text-[11px] text-on-surface-variant group-hover:text-gray-400">128GB Midnight Blue</div></td><td class="p-4 font-mono-label font-bold text-primary group-hover:text-warm-cream">MOB-011</td><td class="p-4 font-mono-label text-xs uppercase">Phone</td><td class="p-4"><span class="inline-block px-3 py-1 bg-surface-container-highest text-black neo-brutalist-border font-label-caps text-[10px] font-bold uppercase">ACTIVE</span></td><td class="p-4"><span class="inline-block px-2.5 py-0.5 bg-electric-yellow text-black neo-brutalist-border font-mono-label text-[11px] font-bold uppercase">Nov 2026</span></td><td class="p-4 font-mono-label text-xs">Mobile / Remote</td><td class="p-4 font-mono-label text-xs font-bold">You</td><td class="p-4 text-center"><button class="bg-white group-hover:bg-warm-cream group-hover:text-black text-primary px-3 py-1 neo-brutalist-border font-label-caps text-[11px] uppercase font-bold shadow-[2px_2px_0px_0px_rgba(29,28,22,1)]">VIEW</button></td></tr></tbody></table></div></div>
+<!-- Dark Activity Log (WebMCP Activity) -->
+</div>
+</main>
+
+
+</body></html>

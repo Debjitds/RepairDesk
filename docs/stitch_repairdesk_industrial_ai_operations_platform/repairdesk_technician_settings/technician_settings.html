@@ -1,0 +1,497 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>RepairDesk - Technician Settings</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Space+Grotesk:wght@500;600;700;800&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" class="">
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script data-purpose="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['Space Grotesk', 'monospace'],
+            display: ['Space Grotesk', 'sans-serif']
+          },
+          colors: {
+            brand: {
+              cream: '#FEF9EF',
+              surface: '#F8F3E9',
+              dark: '#111111',
+              orange: '#FE5E1E',
+              yellow: '#D3F000',
+              border: '#000000',
+              danger: '#EF4444'
+            }
+          },
+          borderWidth: {
+            '3': '3px'
+          },
+          boxShadow: {
+            'brutal': '4px 4px 0px 0px #000000',
+            'brutal-sm': '2px 2px 0px 0px #000000',
+            'brutal-lg': '6px 6px 0px 0px #000000'
+          }
+        }
+      }
+    }
+  </script>
+<!-- Global Neo-Brutalist Styles and Dot Pattern -->
+<style data-purpose="layout-patterns">
+    body {
+      background-color: #FEF9EF;
+      color: #000000;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    /* Background dot matrix matching screenshots */
+    .bg-dot-matrix {
+      background-color: #FEF9EF;
+      background-image: radial-gradient(#1a1a1a 1.2px, transparent 1.2px);
+      background-size: 24px 24px;
+    }
+
+    /* Heavy brutalist button hover mechanics */
+    .btn-brutal {
+      transition: transform 0.08s ease, box-shadow 0.08s ease;
+    }
+    .btn-brutal:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 5px 5px 0px 0px #000000;
+    }
+    .btn-brutal:active {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0px 0px #000000;
+    }
+
+    /* Custom brutalist checkbox/switch styles */
+    .toggle-checkbox:checked + .toggle-label-yellow {
+      background-color: #D3F000;
+    }
+    .toggle-checkbox:checked + .toggle-label-orange {
+      background-color: #FE5E1E;
+    }
+    .toggle-checkbox:checked ~ .toggle-knob {
+      transform: translateX(24px);
+      background-color: #000000;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex bg-dot-matrix selection:bg-brand-yellow selection:text-black">
+<!-- BEGIN: Sidebar -->
+<aside class="bg-[#FEF9EF] fixed top-0 left-0 h-screen w-64 z-50 border-r-3 border-black flex flex-col justify-between min-h-screen" style="bottom: 0px;"><div class="p-4"><div class="font-display text-[28px] font-black tracking-tighter text-black mb-8 flex items-center gap-2"><span class="material-symbols-outlined text-[32px]" data-icon="precision_manufacturing">precision_manufacturing</span> RepairDesk </div><div class="flex flex-col gap-2 font-display text-sm font-bold uppercase tracking-wider"><a class="flex items-center gap-3 px-4 py-3 text-black hover:bg-neutral-100 border-2 border-transparent hover:border-black transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="dashboard">dashboard</span> Dashboard </a><a class="flex items-center gap-3 px-4 py-3 text-black hover:bg-neutral-100 border-2 border-transparent hover:border-black transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="build">build</span> My Repairs </a><a class="flex items-center gap-3 px-4 py-3 text-black hover:bg-neutral-100 border-2 border-transparent hover:border-black transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="precision_manufacturing">precision_manufacturing</span> Assets </a><a class="flex items-center gap-3 px-4 py-3 text-black hover:bg-neutral-100 border-2 border-transparent hover:border-black transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="history">history</span> Repair History </a><a class="flex items-center gap-3 px-4 py-3 text-black hover:bg-neutral-100 border-2 border-transparent hover:border-black transition-all duration-200" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="notifications">notifications</span> Notifications </a><a class="flex items-center gap-3 px-4 py-3 bg-black text-white border-2 border-black shadow-brutal font-bold transition-colors duration-200" href="#"><span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span> Settings </a></div></div><div class="flex items-center gap-3 p-4 border-t-2 border-black bg-[#F8F3E9]"><div class="w-10 h-10 rounded-full border-2 border-black overflow-hidden bg-[#FE5E1E] flex items-center justify-center"><span class="material-symbols-outlined text-white">person</span></div><div class="flex-1 min-w-0"><div class="font-bold text-black text-[14px] leading-tight truncate">Alex Rivera</div><div class="text-neutral-600 text-[12px] font-mono uppercase tracking-wider truncate">Technician</div></div><button class="hover:text-red-600 transition-colors"><span class="material-symbols-outlined text-[20px]">logout</span></button></div></aside>
+<!-- END: Sidebar -->
+<!-- BEGIN: Main Content Area -->
+<main class="ml-64 flex-1 p-8 lg:p-10 max-w-[1500px] w-full" data-purpose="settings-main-container">
+<!-- Top Header Bar -->
+<header class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b-3 border-black pb-6" data-purpose="settings-header">
+<div>
+<h1 class="font-display font-black text-4xl lg:text-5xl uppercase tracking-tight text-black">
+          SETTINGS
+        </h1>
+<p class="font-mono text-sm sm:text-base text-neutral-700 mt-2 font-medium">
+          Manage your technician account, security, and bench preferences.
+        </p>
+</div>
+<!-- Top Right Node Indicator -->
+<div class="inline-flex items-center gap-2 bg-white border-2 border-black px-3 py-1.5 shadow-brutal-sm self-start md:self-auto font-mono text-xs font-bold uppercase tracking-wider">
+<span class="w-2.5 h-2.5 rounded-full bg-lime-500 animate-pulse border border-black"></span>
+<span class="">WEBMCP READY // NODE: TECH-1042</span>
+</div>
+</header>
+<!-- Two-Column Primary Layout Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<!-- LEFT COLUMN -->
+<div class="space-y-8 flex flex-col">
+<!-- BEGIN: Profile Panel -->
+<section class="bg-[#FEF9EF] border-3 border-black shadow-brutal p-6" data-purpose="profile-settings-card">
+<!-- Card Header -->
+<div class="flex items-center justify-between border-b-2 border-black pb-4 mb-6">
+<h2 class="font-display font-black text-xl uppercase tracking-tight text-black flex items-center gap-2">
+<span class="w-3 h-3 bg-[#FE5E1E] inline-block border border-black"></span>
+              PROFILE DETAILS
+            </h2>
+<span class="font-mono text-xs font-bold bg-black text-white px-2 py-0.5 uppercase">Technician ID #1042</span>
+</div>
+<!-- Profile Form Fields -->
+<form class="space-y-5" onsubmit="event.preventDefault();">
+<!-- Full Name (Editable) -->
+<div>
+<label class="block font-mono text-xs font-bold uppercase tracking-wide text-black mb-1.5" for="full-name">
+                FULL NAME
+              </label>
+<input class="w-full bg-[#F8F3E9] border-2 border-black p-3 font-mono text-sm font-semibold text-black focus:ring-0 focus:border-black focus:outline-none focus:bg-white shadow-brutal-sm" id="full-name" name="fullName" type="text" value="Alex Rivera">
+</div>
+<!-- Work Email (Read-only) -->
+<div>
+<div class="flex justify-between items-center mb-1.5">
+<label class="block font-mono text-xs font-bold uppercase tracking-wide text-black" for="work-email">
+                  WORK EMAIL
+                </label>
+<span class="font-mono text-[10px] text-neutral-600 uppercase font-semibold flex items-center gap-1">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                  MANAGED BY ADMIN
+                </span>
+</div>
+<input class="w-full bg-[#EAE5DB] border-2 border-black p-3 font-mono text-sm font-semibold text-neutral-700 cursor-not-allowed" id="work-email" readonly="" type="email" value="alex@company.com">
+</div>
+<!-- Technical Specialization & Department (Read-only tags) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div>
+<label class="block font-mono text-xs font-bold uppercase tracking-wide text-black mb-1.5">
+                  SPECIALIZATION
+                </label>
+<div class="bg-[#F8F3E9] border-2 border-black p-3 font-mono text-xs font-bold text-black flex items-center justify-between">
+<span class="">Hardware Diagnostics</span>
+<span class="text-xs">⚡</span>
+</div>
+</div>
+<div>
+<label class="block font-mono text-xs font-bold uppercase tracking-wide text-black mb-1.5">
+                  DEPARTMENT
+                </label>
+<div class="bg-[#F8F3E9] border-2 border-black p-3 font-mono text-xs font-bold text-black">
+                  IT Bench Operations
+                </div>
+</div>
+</div>
+<!-- Role & Assignment Badge -->
+<div class="p-3 bg-[#F2EDE3] border-2 border-black flex items-center justify-between">
+<div>
+<span class="text-xs font-mono font-bold uppercase text-neutral-600 block">CURRENT ROLE</span>
+<span class="text-sm font-display font-black uppercase text-black">Tier 2 Bench Technician</span>
+</div>
+<span class="bg-[#D3F000] border border-black font-mono text-xs px-2.5 py-1 font-bold text-black uppercase">
+                ACTIVE DUTY
+              </span>
+</div>
+<!-- Save Profile Action -->
+<div class="pt-2">
+<button class="btn-brutal w-full bg-[#D3F000] hover:bg-[#c2dd00] border-2 border-black font-display font-bold text-sm tracking-wider uppercase py-3.5 px-6 shadow-brutal text-black flex items-center justify-center gap-2" type="submit">
+<span class="">[ SAVE CHANGES ]</span>
+</button>
+</div>
+</form>
+</section>
+<!-- END: Profile Panel -->
+<!-- BEGIN: Notification Preferences Panel -->
+<section class="bg-[#FEF9EF] border-3 border-black shadow-brutal p-6" data-purpose="notification-preferences-card">
+<!-- Card Header -->
+<div class="border-b-2 border-black pb-4 mb-4 flex items-center justify-between">
+<h2 class="font-display font-black text-xl uppercase tracking-tight text-black flex items-center gap-2">
+<span class="w-3 h-3 bg-[#D3F000] inline-block border border-black"></span>
+              NOTIFICATION PREFERENCES
+            </h2>
+<span class="font-mono text-xs font-bold text-neutral-600 uppercase">5 DISPATCH HOOKS</span>
+</div>
+<p class="font-mono text-xs text-neutral-600 mb-6 font-medium">
+            Configure which repair events trigger immediate notifications on your workstation feed and mobile dispatch alerts.
+          </p>
+<!-- Toggle list -->
+<div class="space-y-4">
+<!-- Item 1: New Repair Assignments -->
+<label class="flex items-center justify-between p-3.5 bg-white border-2 border-black cursor-pointer shadow-brutal-sm hover:bg-[#FFFDF9]">
+<div class="pr-4">
+<span class="font-display font-bold text-sm uppercase tracking-tight text-black block">NEW REPAIR ASSIGNMENTS</span>
+<span class="font-mono text-xs text-neutral-600">Immediate alert when tickets are dispatched to you</span>
+</div>
+<div class="relative inline-block w-12 h-6 flex-shrink-0">
+<input checked="" class="sr-only toggle-checkbox" type="checkbox">
+<div class="block bg-neutral-300 w-12 h-6 border-2 border-black toggle-label-yellow transition-colors duration-150"></div>
+<div class="absolute left-1 top-1 bg-black w-4 h-4 transition-transform duration-150 toggle-knob"></div>
+</div>
+</label>
+<!-- Item 2: Critical Priority Repairs -->
+<label class="flex items-center justify-between p-3.5 bg-white border-2 border-black cursor-pointer shadow-brutal-sm hover:bg-[#FFFDF9]">
+<div class="pr-4">
+<div class="flex items-center gap-2">
+<span class="font-display font-bold text-sm uppercase tracking-tight text-black block">CRITICAL REPAIR ALERTS</span>
+<span class="bg-[#FE5E1E] text-white border border-black font-mono text-[10px] font-bold px-1.5 uppercase">HIGH PRIORITY</span>
+</div>
+<span class="font-mono text-xs text-neutral-600">Bypass quiet mode for conference room &amp; executive gear</span>
+</div>
+<div class="relative inline-block w-12 h-6 flex-shrink-0">
+<input checked="" class="sr-only toggle-checkbox" type="checkbox">
+<div class="block bg-neutral-300 w-12 h-6 border-2 border-black toggle-label-orange transition-colors duration-150"></div>
+<div class="absolute left-1 top-1 bg-black w-4 h-4 transition-transform duration-150 toggle-knob"></div>
+</div>
+</label>
+<!-- Item 3: Status Updates -->
+<label class="flex items-center justify-between p-3.5 bg-white border-2 border-black cursor-pointer shadow-brutal-sm hover:bg-[#FFFDF9]">
+<div class="pr-4">
+<span class="font-display font-bold text-sm uppercase tracking-tight text-black block">REPAIR STATUS UPDATES</span>
+<span class="font-mono text-xs text-neutral-600">State transitions (In Repair, Waiting on Parts, Ready)</span>
+</div>
+<div class="relative inline-block w-12 h-6 flex-shrink-0">
+<input checked="" class="sr-only toggle-checkbox" type="checkbox">
+<div class="block bg-neutral-300 w-12 h-6 border-2 border-black toggle-label-yellow transition-colors duration-150"></div>
+<div class="absolute left-1 top-1 bg-black w-4 h-4 transition-transform duration-150 toggle-knob"></div>
+</div>
+</label>
+<!-- Item 4: Asset & Warranty Warnings -->
+<label class="flex items-center justify-between p-3.5 bg-white border-2 border-black cursor-pointer shadow-brutal-sm hover:bg-[#FFFDF9]">
+<div class="pr-4">
+<span class="font-display font-bold text-sm uppercase tracking-tight text-black block">ASSET / WARRANTY WARNINGS</span>
+<span class="font-mono text-xs text-neutral-600">Repeated failures and warranty expiration flags</span>
+</div>
+<div class="relative inline-block w-12 h-6 flex-shrink-0">
+<input checked="" class="sr-only toggle-checkbox" type="checkbox">
+<div class="block bg-neutral-300 w-12 h-6 border-2 border-black toggle-label-yellow transition-colors duration-150"></div>
+<div class="absolute left-1 top-1 bg-black w-4 h-4 transition-transform duration-150 toggle-knob"></div>
+</div>
+</label>
+<!-- Item 5: WebMCP & System Notices -->
+<label class="flex items-center justify-between p-3.5 bg-white border-2 border-black cursor-pointer shadow-brutal-sm hover:bg-[#FFFDF9]">
+<div class="pr-4">
+<span class="font-display font-bold text-sm uppercase tracking-tight text-black block">WEBMCP TELEMETRY &amp; SYSTEM NOTICES</span>
+<span class="font-mono text-xs text-neutral-600">AI agent diagnostic logs and dispatch broadcast events</span>
+</div>
+<div class="relative inline-block w-12 h-6 flex-shrink-0">
+<input checked="" class="sr-only toggle-checkbox" type="checkbox">
+<div class="block bg-neutral-300 w-12 h-6 border-2 border-black toggle-label-yellow transition-colors duration-150"></div>
+<div class="absolute left-1 top-1 bg-black w-4 h-4 transition-transform duration-150 toggle-knob"></div>
+</div>
+</label>
+</div>
+<!-- Save Preferences Action -->
+<div class="pt-6">
+<button class="btn-brutal w-full bg-white hover:bg-neutral-100 border-2 border-black font-display font-bold text-sm tracking-wider uppercase py-3 px-6 shadow-brutal text-black" type="button">
+              [ SAVE PREFERENCES ]
+            </button>
+</div>
+</section>
+<!-- END: Notification Preferences Panel -->
+</div>
+<!-- RIGHT COLUMN -->
+<div class="space-y-8 flex flex-col">
+<!-- BEGIN: Security Panel -->
+<section class="bg-[#FEF9EF] border-3 border-black shadow-brutal p-6" data-purpose="security-settings-card">
+<!-- Card Header -->
+<div class="border-b-2 border-black pb-4 mb-6 flex items-center justify-between">
+<h2 class="font-display font-black text-xl uppercase tracking-tight text-black flex items-center gap-2">
+<span class="w-3 h-3 bg-black inline-block border border-black"></span>
+              SECURITY &amp; ACCESS
+            </h2>
+<span class="font-mono text-xs font-bold text-neutral-600 uppercase">CREDENTIALS</span>
+</div>
+<!-- Sub-section: Password Update Form -->
+<div class="mb-8">
+<h3 class="font-mono text-xs font-black uppercase tracking-wider text-neutral-800 mb-3 flex items-center gap-2">
+<svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+              CHANGE PASSWORD
+            </h3>
+<form class="space-y-3" onsubmit="event.preventDefault();">
+<div>
+<label class="block font-mono text-[11px] font-bold uppercase text-neutral-700 mb-1" for="current-password">
+                  CURRENT PASSWORD
+                </label>
+<input class="w-full bg-[#F8F3E9] border-2 border-black p-2.5 font-mono text-sm text-black focus:ring-0 focus:border-black focus:bg-white shadow-brutal-sm" id="current-password" type="password" value="••••••••••••">
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<div>
+<label class="block font-mono text-[11px] font-bold uppercase text-neutral-700 mb-1" for="new-password">
+                    NEW PASSWORD
+                  </label>
+<input class="w-full bg-[#F8F3E9] border-2 border-black p-2.5 font-mono text-sm text-black focus:ring-0 focus:border-black focus:bg-white placeholder:text-neutral-400 shadow-brutal-sm" id="new-password" placeholder="Enter new password" type="password">
+</div>
+<div>
+<label class="block font-mono text-[11px] font-bold uppercase text-neutral-700 mb-1" for="confirm-password">
+                    CONFIRM NEW PASSWORD
+                  </label>
+<input class="w-full bg-[#F8F3E9] border-2 border-black p-2.5 font-mono text-sm text-black focus:ring-0 focus:border-black focus:bg-white placeholder:text-neutral-400 shadow-brutal-sm" id="confirm-password" placeholder="Confirm new password" type="password">
+</div>
+</div>
+<div class="pt-2">
+<button class="btn-brutal w-full bg-white hover:bg-neutral-100 border-2 border-black font-display font-bold text-sm tracking-wider uppercase py-2.5 px-4 shadow-brutal text-black" type="submit">
+                  [ UPDATE PASSWORD ]
+                </button>
+</div>
+</form>
+</div>
+<!-- Sub-section: Active Sessions -->
+<div class="border-t-2 border-black pt-6">
+<h3 class="font-mono text-xs font-black uppercase tracking-wider text-neutral-800 mb-3 flex items-center gap-2">
+<svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+              ACTIVE BENCH SESSION
+            </h3>
+<!-- Session Card -->
+<div class="p-3.5 bg-white border-2 border-black shadow-brutal-sm flex items-center justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-display font-bold text-sm uppercase text-black">Workstation Bench 2</span>
+<span class="bg-lime-200 text-lime-900 border border-black font-mono text-[10px] font-bold px-1.5 uppercase">THIS DEVICE</span>
+</div>
+<p class="font-mono text-xs text-neutral-600 mt-0.5">Chrome 128 / Windows 11 Enterprise (192.168.10.42)</p>
+</div>
+<div class="flex items-center gap-1.5 font-mono text-xs font-bold text-lime-700">
+<span class="w-2 h-2 rounded-full bg-lime-500 inline-block border border-black"></span>
+                Active now
+              </div>
+</div>
+<!-- Log out other devices button -->
+<div class="mt-4">
+<button class="btn-brutal w-full bg-[#F2EDE3] hover:bg-neutral-200 border-2 border-black font-mono font-bold text-xs uppercase py-2.5 px-4 shadow-brutal-sm text-black" type="button">
+                LOG OUT OTHER SESSIONS
+              </button>
+</div>
+</div>
+</section>
+<!-- END: Security Panel -->
+<!-- BEGIN: Work Preferences Panel -->
+<section class="bg-[#FEF9EF] border-3 border-black shadow-brutal p-6" data-purpose="work-preferences-card">
+<!-- Card Header -->
+<div class="border-b-2 border-black pb-4 mb-6 flex items-center justify-between">
+<h2 class="font-display font-black text-xl uppercase tracking-tight text-black flex items-center gap-2">
+<span class="w-3 h-3 bg-[#FE5E1E] inline-block border border-black"></span>
+              BENCH &amp; WORK PREFERENCES
+            </h2>
+<span class="font-mono text-xs font-bold text-neutral-600 uppercase">INTERFACE CONFIG</span>
+</div>
+<div class="space-y-4">
+<!-- Dropdown: Default Repair View -->
+<div>
+<label class="block font-mono text-xs font-bold uppercase tracking-wide text-black mb-1.5" for="default-view">
+                DEFAULT LANDING VIEW
+              </label>
+<div class="relative">
+<select class="w-full bg-white border-2 border-black p-3 font-mono text-sm font-semibold text-black focus:ring-0 focus:border-black appearance-none shadow-brutal-sm" id="default-view">
+<option selected="" value="my-repairs">My Repairs (Assigned to Me)</option>
+<option value="overview">Technician Overview Dashboard</option>
+<option value="critical">Critical Repairs First</option>
+<option value="assets">Asset Registry</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-black">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path></svg>
+</div>
+</div>
+</div>
+<!-- Dropdown: Work Priority Display -->
+<div>
+<label class="block font-mono text-xs font-bold uppercase tracking-wide text-black mb-1.5" for="priority-sorting">
+                WORK PRIORITY SORTING
+              </label>
+<div class="relative">
+<select class="w-full bg-white border-2 border-black p-3 font-mono text-sm font-semibold text-black focus:ring-0 focus:border-black appearance-none shadow-brutal-sm" id="priority-sorting">
+<option selected="" value="priority">Priority First (Critical &gt; High &gt; Medium)</option>
+<option value="due-date">Due Date (Earliest First)</option>
+<option value="ticket-id">Ticket ID (Ascending)</option>
+<option value="updated">Recently Updated</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-black">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path></svg>
+</div>
+</div>
+</div>
+<!-- Toggle: Compact Repair List -->
+<label class="flex items-center justify-between p-3.5 bg-white border-2 border-black cursor-pointer shadow-brutal-sm hover:bg-[#FFFDF9]">
+<div>
+<span class="font-display font-bold text-sm uppercase text-black block">COMPACT REPAIR ROWS</span>
+<span class="font-mono text-xs text-neutral-600">Display denser tables with reduced padding</span>
+</div>
+<div class="relative inline-block w-12 h-6 flex-shrink-0">
+<input class="sr-only toggle-checkbox" type="checkbox">
+<div class="block bg-neutral-300 w-12 h-6 border-2 border-black toggle-label-yellow transition-colors duration-150"></div>
+<div class="absolute left-1 top-1 bg-black w-4 h-4 transition-transform duration-150 toggle-knob"></div>
+</div>
+</label>
+<!-- Toggle: Reduced Motion -->
+<label class="flex items-center justify-between p-3.5 bg-white border-2 border-black cursor-pointer shadow-brutal-sm hover:bg-[#FFFDF9]">
+<div>
+<span class="font-display font-bold text-sm uppercase text-black block">REDUCED INTERFACE MOTION</span>
+<span class="font-mono text-xs text-neutral-600">Disable live status pulse and transition effects</span>
+</div>
+<div class="relative inline-block w-12 h-6 flex-shrink-0">
+<input class="sr-only toggle-checkbox" type="checkbox">
+<div class="block bg-neutral-300 w-12 h-6 border-2 border-black toggle-label-yellow transition-colors duration-150"></div>
+<div class="absolute left-1 top-1 bg-black w-4 h-4 transition-transform duration-150 toggle-knob"></div>
+</div>
+</label>
+</div>
+</section>
+<!-- END: Work Preferences Panel -->
+</div>
+</div>
+<!-- BEGIN: Bottom Role & Access and Danger Zone Section -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8" data-purpose="role-and-danger-row">
+<!-- Role and Access Panel (Spans 2 columns) -->
+<section class="lg:col-span-2 bg-[#FEF9EF] border-3 border-black shadow-brutal p-6" data-purpose="role-permissions-card">
+<div class="border-b-2 border-black pb-4 mb-4 flex items-center justify-between">
+<h2 class="font-display font-black text-xl uppercase tracking-tight text-black flex items-center gap-2">
+<span class="w-3 h-3 bg-black inline-block border border-black"></span>
+            ROLE &amp; ACCESS PERMISSIONS
+          </h2>
+<span class="font-mono text-xs font-bold bg-[#D3F000] border border-black text-black px-2 py-0.5 uppercase">TIER 2 VERIFIED</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+<div class="p-3 bg-white border-2 border-black shadow-brutal-sm">
+<span class="font-mono text-xs text-neutral-500 font-bold uppercase block">DESIGNATED ROLE</span>
+<span class="font-display font-bold text-base text-black">TECHNICIAN</span>
+</div>
+<div class="p-3 bg-white border-2 border-black shadow-brutal-sm">
+<span class="font-mono text-xs text-neutral-500 font-bold uppercase block">CLEARANCE SCOPE</span>
+<span class="font-display font-bold text-base text-black">REPAIR OPERATIONS</span>
+</div>
+</div>
+<p class="font-mono text-xs sm:text-sm text-neutral-800 leading-relaxed bg-[#F8F3E9] p-4 border-2 border-black">
+          You are authorized to view and execute work orders on assigned repairs, inspect asset maintenance histories, order bench components, and transition ticket lifecycles. System administrators maintain governance over root settings and warehouse dispatch policies.
+        </p>
+<div class="mt-4 flex items-center gap-2 font-mono text-xs text-neutral-600">
+<svg class="w-4 h-4 text-neutral-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">Need elevated role permissions or tool access? Contact <strong class="text-black underline cursor-pointer">IT Ops Dispatch (#DISP-HQ)</strong>.</span>
+</div>
+</section>
+<!-- Danger Zone Panel (Spans 1 column) -->
+<section class="lg:col-span-1 bg-[#FEF9EF] border-3 border-black shadow-brutal p-6 flex flex-col justify-between" data-purpose="danger-zone-card">
+<div>
+<!-- Header with Warning Styling -->
+<div class="border-b-2 border-black pb-4 mb-4 flex items-center justify-between">
+<h2 class="font-display font-black text-xl uppercase tracking-tight text-red-600 flex items-center gap-2">
+<span class="w-3 h-3 bg-red-600 inline-block border border-black"></span>
+              DANGER ZONE
+            </h2>
+<span class="font-mono text-[10px] font-bold bg-red-100 text-red-700 border border-red-400 px-1.5 py-0.5 uppercase">CAUTION</span>
+</div>
+<p class="font-mono text-xs text-neutral-700 mb-6 font-medium">
+            Actions performed here immediately impact all active device authorizations and bench session keys.
+          </p>
+<!-- Danger Action Buttons -->
+<div class="space-y-3">
+<button class="btn-brutal w-full bg-[#FEF9EF] hover:bg-neutral-100 border-2 border-black font-mono font-bold text-xs uppercase py-3 px-4 shadow-brutal-sm text-black flex items-center justify-center gap-2" type="button">
+<svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">LOG OUT ALL DEVICES</span>
+</button>
+<button class="btn-brutal w-full bg-red-50 hover:bg-red-100 border-2 border-red-600 font-mono font-bold text-xs uppercase py-3 px-4 shadow-brutal-sm text-red-600 flex items-center justify-center gap-2" type="button">
+<svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">DECOMMISSION ACCOUNT</span>
+</button>
+</div>
+</div>
+<p class="font-mono text-[11px] text-neutral-500 mt-6 pt-4 border-t border-black/20">
+          Decommissioning revokes all bench hardware access tags and requires supervisor countersignature.
+        </p>
+</section>
+</div>
+<!-- END: Bottom Role & Access and Danger Zone Section -->
+<!-- BEGIN: Live Dispatch Telemetry Strip (Consistent with SCREEN_4 / SCREEN_5) -->
+<div class="mt-8 bg-black text-white p-4 border-3 border-black shadow-brutal font-mono text-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-3" data-purpose="telemetry-footer-strip">
+<div class="flex items-center gap-2.5">
+<span class="w-2.5 h-2.5 rounded-full bg-lime-400 animate-pulse"></span>
+<span class="font-bold uppercase tracking-wider text-lime-400">WEBMCP AGENT ACTIVITY — LIVE TELEMETRY</span>
+</div>
+<div class="text-neutral-400 flex items-center gap-4 text-[11px]">
+<span class="">LAST DISPATCH SYNC: <strong class="text-white">10:48 AM</strong></span>
+<span class="">BENCH STATUS: <strong class="text-[#D3F000]">READY FOR REPAIRS</strong></span>
+</div>
+</div>
+<!-- END: Live Dispatch Telemetry Strip -->
+</main>
+<!-- END: Main Content Area -->
+
+
+
+
+</body></html>
