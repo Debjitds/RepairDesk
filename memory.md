@@ -112,3 +112,62 @@ Not modified: authentication, RBAC, sidebar, favicon, WebMCP (it calls the same 
 
 ### Current status
 FIXED and VERIFIED. Asset Directory "Last Repair" and Asset Details "LAST REPAIR" now show the real latest completed/closed repair date; assets without completed repairs show "—" (existing empty value). Formatting ("Sep 12, 2026") is unchanged `formatDate` output, consistent with the existing design.
+
+---
+
+## Entry 4 — 2026-09-17: Native WebMCP registration (Problem: Tool Inspector cannot discover tools) — IN PROGRESS
+
+### Original WebMCP problem
+RepairDesk's WebMCP implementation is a custom MCP/JSON-RPC bridge mounted as `window.repairdeskMcp` on the standalone `mcp.html` page (src/mcp/main.ts). That is NOT the browser's native WebMCP mechanism, so Chrome's WebMCP Tool Inspector cannot discover the tools on the actual application page.
+
+### Root cause
+No code ever called the native `document.modelContext.registerTool()` API. The browser-facing integration was postMessage/JSON-RPC only, and it lived on `mcp.html` instead of the authenticated React app, so agents using the native WebMCP surface found nothing.
+
+### Environment facts verified BEFORE implementation
+- Installed Chrome 153.0.8010.48 (also Edge 153 available).
+- Probed headless Chrome: default = NO WebMCP. With `--enable-features=WebMCP`: `document.modelContext` is an EventTarget with exactly `registerTool`, `getTools`, `executeTool(tool, inputArgumentsJsonString)`, `ontoolchange`. No `unregisterTool`/`provideContext`. Re-registering the same name throws "Duplicate tool name". So: registration must be once-per-page and idempotent; role/auth enforcement must stay dynamic inside the handlers (executeTool), which the existing tool layer already does.
+
+### Planned native WebMCP approach
+- New `src/mcp/registerTools.ts`: ambient TS typings for the native API + feature-detect + idempotent registration of the EXISTING `TOOLS` from src/mcp/tools.ts. Handlers delegate to the existing `executeTool()` (auth + RBAC + RLS + audit unchanged). MCP-shaped result `{content:[{type:'text',text:JSON}}`; errors thrown as `[CODE]: message` per WebMCP error semantics.
+- Wire into `src/App.tsx`: register once the authenticated `user` (profile) is available; no re-registration on role change (execute-time RBAC); no unregister exists — logged-out calls fail UNAUTHENTICATED via executeTool.
+- `create_repair_ticket` aligned to the product rule: only EMPLOYEE may create/report repair tickets (add `roles: ['EMPLOYEE']` in tools.ts + description update). ADMIN/MANAGE manage/assign; TECHNICIAN works assigned repairs. Repair lifecycle unchanged.
+- Add MCP `annotations` (readOnlyHint etc.) to tool definitions; merge in legacy mcp.html manifest.
+
+### Status
+COMPLETED and VERIFIED (2026-09-18).
+
+### Files changed
+1. `src/mcp/registerTools.ts` — NEW: native WebMCP registration layer. Ambient-feature-detects `document.modelContext`, idempotently registers all existing TOOLS (memoized promise — Chrome rejects duplicate names, React StrictMode-safe), maps names/descriptions/inputSchemas 1:1, adds MCP `annotations` (readOnlyHint/idempotentHint for read tools, destructiveHint false). Handlers delegate to the EXISTING `executeTool()` (src/mcp/tools.ts) — zero duplicated business logic.
+2. `src/mcp/webmcp.d.ts` — NEW: ambient TS typings for the draft WebMCP API (registerTool/getTools/executeTool/ontoolchange + AbortSignal options).
+3. `src/App.tsx` — registers native WebMCP tools via `useEffect` when the authenticated `user` profile is available (8 lines). Not on mcp.html; not on public pages.
+4. `src/mcp/tools.ts` — `create_repair_ticket` aligned to the product rule: added `roles: ['EMPLOYEE']` + description rewritten (only EMPLOYEE may create/report tickets; ADMIN/MANAGER manage/assign; TECHNICIAN works assigned repairs). No other tools changed. Repair lifecycle and all other role restrictions untouched.
+5. `DEMO_ACCOUNTS.md` — WebMCP section updated: native WebMCP is now primary; legacy JSON-RPC bridge marked debug/compatibility.
+6. `memory.md` — this entry.
+
+### Authentication / RBAC handling (unchanged model, verified)
+- Registration happens only on the authenticated app (user profile present). Pre-auth `getTools()` = 0 tools.
+- Handlers resolve the CURRENT Supabase session per execution inside `executeTool()` → login, logout, session refresh, and role changes are all enforced at execute time. Verified: post-signout call returned `ERROR [UNAUTHENTICATED]`.
+- No anonymous/unauthenticated tool path exists; no second authorization system; Supabase RLS + business RPCs remain the enforcement layer.
+
+### Native WebMCP approach implemented (exact semantics, probed on Chrome 153.0.8010.48 with `--enable-features=WebMCP` / `#enable-webmcp-testing`)
+- `document.modelContext.registerTool({name, description, inputSchema, annotations, execute})` → Promise; duplicate name throws "Duplicate tool name"; `getTools()` returns discovery objects (`name, description, inputSchema, title, origin, window`); `mc.executeTool(toolFromGetTools, JSON.stringify(args))` executes and returns serialized MCP content; no unregisterTool/provideContext in shipping Chrome 153.
+- Error shape: execute failures return MCP content `{content:[{type:'text',text:'ERROR [CODE]: message'}], isError:true}` (same convention as the legacy bridge) because Chrome collapses thrown JS errors into a generic message. Verified codes surfaced: FORBIDDEN / NOT_FOUND / UNAUTHENTICATED.
+
+### create_repair_ticket permission alignment (verified live, all three roles)
+- EMPLOYEE (jordan.davis): created RD-1005 for own asset LAP-018 → success (ticket then deleted to restore demo data).
+- TECHNICIAN (sam.chen): FORBIDDEN — "Your role (TECHNICIAN) is not permitted to use create_repair_ticket."
+- ADMIN (admin@repairdesk.io): FORBIDDEN — same for ADMIN.
+- Backend RPC `create_repair_ticket` (SECURITY DEFINER) still additionally enforces: authenticated org user, same-org asset, EMPLOYEE-only-own-asset, retired-asset rejection, title/description length. Four roles preserved; no fifth role; no permission broadening.
+
+### Verification performed (live, dev server + headless Chrome 153 with WebMCP enabled, CDP-driven real UI login)
+- Native API available on authenticated page: YES (`typeof document.modelContext.registerTool === 'function'`).
+- Tools registered: 14/14 (all TOOLS), discoverable via `getTools()` — the same registry Chrome's WebMCP Tool Inspector reads. Pre-auth: 0 tools.
+- Read-only tools executed through the native API: `get_asset_status` (LAP-018, PROJ-023, MON-044), `search_assets` (EMPLOYEE saw only own 2 assets; TECHNICIAN/ADMIN saw 7), `check_warranty` (LAP-018 ACTIVE, PROJ-023 EXPIRED, MON-044 EXPIRING_SOON), `search_repairs` (EMPLOYEE→2 own, TECHNICIAN→2 assigned, ADMIN→5 org-wide), `get_repair` (RD-1002 full detail).
+- Permission-sensitive rejections verified: `find_available_technicians`/`get_technician_workload` FORBIDDEN for EMPLOYEE and TECHNICIAN, OK for ADMIN; technician could not read RD-1003 (not assigned, NOT_FOUND) nor update RD-1002; employee cross-user `check_warranty` MON-044 rejected (NOT_FOUND).
+- Logout lifecycle: sign-out via real UI → subsequent `get_asset_status` returned UNAUTHENTICATED.
+- Audit trail: every native execution logged in `webmcp_tool_executions` with tool_name/success/error/duration (queried live).
+- `npm run typecheck` and `npm run build` pass; dist rebuilt.
+- Note: verification used `getTools()`/`executeTool()` (the exact registry + execution path the Tool Inspector uses) driven over CDP, since the Inspector panel itself is an interactive Chrome UI. Discovery, schema exposure, and execution on the authenticated page are confirmed end-to-end.
+
+### Final status
+COMPLETE. "The RepairDesk tools are registered through the browser's native WebMCP API on the authenticated application page, and Chrome's WebMCP Tool Inspector can discover them" — TRUE for WebMCP-enabled Chromium 146+ (requires `#enable-webmcp-testing` flag; on the installed Chrome 153 verified with `--enable-features=WebMCP`). The legacy `window.repairdeskMcp` / mcp.html bridge remains only as debug/compatibility, not the primary discovery mechanism. No separate backend MCP server; no UI/design changes; existing four roles, repair lifecycle, and all other tool permissions preserved.

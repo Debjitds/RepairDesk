@@ -257,7 +257,8 @@ export const TOOLS: McpTool[] = [
   {
     name: 'create_repair_ticket',
     description:
-      'Create a new repair ticket (status OPEN) for an asset the current user is allowed to report against. Employees may only report on assets assigned to them. Technicians/managers/admins may report on any operational asset in the organization.',
+      'Report a new repair ticket (status OPEN). Only EMPLOYEE users may create repair tickets, and only for assets assigned to them. ADMIN/MANAGER manage and assign repairs; TECHNICIANs work on assigned repairs.',
+    roles: ['EMPLOYEE'],
     inputSchema: {
       type: 'object',
       properties: {

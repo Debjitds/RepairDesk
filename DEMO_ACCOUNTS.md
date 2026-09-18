@@ -21,11 +21,18 @@ Organization: **RepairDesk HQ**
   - RD-1002 — OPEN (Medium) — monitor flicker, awaiting assignment
   - RD-1003 — IN_REPAIR (Critical) — projector overheating, assigned to Priya
 
-## WebMCP endpoint
+## WebMCP
 
-Open `/mcp.html` — MCP bridge mounted as `window.repairdeskMcp.request(message)`
-(JSON-RPC 2.0, MCP protocol 2025-06-18). Tools list, discovery and calls all require
-an authenticated session and run through the same RLS + business functions as the app.
+**Native WebMCP (primary):** RepairDesk registers its tools through the browser's
+native WebMCP API (`document.modelContext.registerTool`) on the authenticated
+application page. Requires a WebMCP-enabled browser (Chrome/Edge 146+ with the
+`#enable-webmcp-testing` flag). After signing in, Chrome's WebMCP Tool Inspector
+can discover and execute the tools; every call runs with the signed-in user's
+role and session (RBAC + RLS enforced, audit-logged).
+
+**Legacy JSON-RPC bridge (debug/compatibility):** open `/mcp.html` — MCP bridge
+mounted as `window.repairdeskMcp.request(message)` (JSON-RPC 2.0, MCP protocol
+2025-06-18). Same tool layer, same authorization.
 
 ## Local development
 

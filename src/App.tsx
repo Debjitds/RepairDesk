@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { registerNativeWebmcpTools } from '@/mcp/registerTools'
 import LandingPage from '@/pages/public/LandingPage'
 import AuthPage from '@/pages/auth/AuthPage'
 import AdminDashboard from '@/pages/admin/Dashboard'
@@ -80,6 +82,15 @@ function AppShell({ children }: { children: React.ReactNode }) {
 export default function App() {
   const { user } = useAuth()
   const role = user?.role
+
+  // Native WebMCP registration: expose the existing tool layer through the
+  // browser's document.modelContext API once the user is authenticated.
+  // Handlers resolve the live Supabase session per execution, so logout,
+  // session refresh, and role changes are enforced at execute time.
+  useEffect(() => {
+    if (!user) return
+    void registerNativeWebmcpTools()
+  }, [user])
 
   return (
     <Routes>
