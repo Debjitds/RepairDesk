@@ -29,7 +29,7 @@ export default function AdminDashboard() {
       .limit(10)
     if (error) throw error
     return (data ?? []) as WebmcpExecution[]
-  }, [])
+  }, [user?.id, user?.role, user?.organization_id])
 
   const repairs = repairsQ.data ?? []
   const assets = assetsQ.data ?? []

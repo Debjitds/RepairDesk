@@ -132,11 +132,11 @@ export const TOOLS: McpTool[] = [
   {
     name: 'search_assets',
     description:
-      'Search RepairDesk assets visible to the current user. Employees see their own assets; technicians see operational assets; managers/admins see the organization directory.',
+      'Search or list assets visible to the current user. When query is provided, filter by asset tag, name, or serial number. When query is empty or omitted, return all visible assets. Use status to filter those visible assets by status. Employees see only their assigned assets; technicians see relevant operational assets; managers/admins see the organization directory.',
     inputSchema: {
       type: 'object',
       properties: {
-        query: { type: 'string', description: 'Search by asset tag, name, or serial number' },
+        query: { type: 'string', description: 'Optional search text for asset tag, name, or serial number. Omit or leave empty to return all visible assets.' },
         status: { type: 'string', enum: ['ACTIVE', 'IN_REPAIR', 'RETIRED', 'ALL'] },
       },
     },

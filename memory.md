@@ -171,3 +171,28 @@ COMPLETED and VERIFIED (2026-09-18).
 
 ### Final status
 COMPLETE. "The RepairDesk tools are registered through the browser's native WebMCP API on the authenticated application page, and Chrome's WebMCP Tool Inspector can discover them" — TRUE for WebMCP-enabled Chromium 146+ (requires `#enable-webmcp-testing` flag; on the installed Chrome 153 verified with `--enable-features=WebMCP`). The legacy `window.repairdeskMcp` / mcp.html bridge remains only as debug/compatibility, not the primary discovery mechanism. No separate backend MCP server; no UI/design changes; existing four roles, repair lifecycle, and all other tool permissions preserved.
+---
+
+## Entry 5 — 2026-09-21: WebMCP role discovery, activity visibility, search usability, and scrollbar styling
+
+### Problem identified and root cause
+Native registration exposed all tools to every authenticated role, dashboard log queries omitted actor filtering for employee/technician views, `search_assets` did not clearly document empty-query behavior, and log containers used the browser default scrollbar.
+
+### Changes made
+- `src/mcp/registerTools.ts` now filters existing `TOOLS` by the authenticated `AppRole`; handlers still delegate to `executeTool()` for independent authentication, RBAC, business rules, and RLS enforcement.
+- `src/App.tsx` re-evaluates registration when the authenticated user or role changes and resets state after sign-out.
+- Employee and technician dashboard/activity queries filter `webmcp_tool_executions` by `actor_id`; admin/manager dashboards retain organization activity behavior.
+- `src/mcp/tools.ts` now explicitly documents query-present search by asset tag/name/serial, empty/omitted query returning all visible assets, and status filtering.
+- WebMCP log containers use a scoped dark-log scrollbar matching the existing yellow/orange neo-brutalist visual language.
+
+### Files modified
+`src/mcp/registerTools.ts`, `src/App.tsx`, `src/mcp/tools.ts`, `src/pages/employee/Dashboard.tsx`, `src/pages/technician/Dashboard.tsx`, `src/pages/technician/MyRepairs.tsx`, `src/pages/admin/Dashboard.tsx`, `src/components/ui/primitives.tsx`, `src/index.css`, `dist/*`, and `memory.md`.
+
+### Validation/testing
+- `npm run typecheck` passed.
+- `npm run build` passed and regenerated `dist/*`.
+- Code paths were reviewed for registration, role filtering, execution delegation, activity queries, search metadata, and scoped scrollbar CSS.
+- Manual four-account Chrome WebMCP Tool Inspector validation was not performed in this continuation; live role-by-role discovery, activity assertions, and visual inspection remain to be verified.
+
+### Final status
+Implementation complete and build-verified. All four requested code changes are present. Remaining limitation is interactive browser validation across EMPLOYEE, TECHNICIAN, MANAGER, and ADMIN accounts.

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
 import { useAsyncData, useDebounced } from '@/hooks/useAsyncData'
 import { fetchRepairs } from '@/services/repairService'
 import {
@@ -15,6 +16,7 @@ import type { Repair, RepairStatus, WebmcpExecution } from '@/types'
 
 /** Technician My Repairs per Stitch `technician_my_repair.html`. */
 export default function TechnicianMyRepairs() {
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const debounced = useDebounced(search)
@@ -23,13 +25,14 @@ export default function TechnicianMyRepairs() {
   const q = useAsyncData<Repair[]>(() => fetchRepairs({ assignedToMe: true, search: debounced }), [debounced])
   const webmcpQ = useAsyncData<WebmcpExecution[]>(async () => {
     const { data, error } = await supabase
-      .from('webmcp_tool_executions')
-      .select('*')
-      .order('created_at', { ascending: false })
+        .from('webmcp_tool_executions')
+        .select('*')
+        .eq('actor_id', user?.id ?? '')
+        .order('created_at', { ascending: false })
       .limit(6)
     if (error) throw error
     return (data ?? []) as WebmcpExecution[]
-  }, [])
+  }, [user?.id])
 
   const repairs = q.data ?? []
   const filtered = useMemo(

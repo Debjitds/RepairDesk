@@ -90,3 +90,18 @@
 .dark-log-scroll::-webkit-scrollbar-thumb {
   background: #000000;
 }
+.dark-log-scroll {
+  scrollbar-color: #d3f000 #1a1a1a;
+  scrollbar-width: thin;
+}
+.dark-log-scroll::-webkit-scrollbar-track {
+  background: #1a1a1a;
+  border-left: 2px solid #000000;
+}
+.dark-log-scroll::-webkit-scrollbar-thumb {
+  background: #d3f000;
+  border: 1px solid #000000;
+}
+.dark-log-scroll::-webkit-scrollbar-thumb:hover {
+  background: #ff4500;
+}

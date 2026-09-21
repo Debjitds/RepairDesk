@@ -277,7 +277,7 @@ export function WebmcpLog({ entries, title = 'WebMCP Log' }: { entries: Array<{ 
         <h2 className="font-label-caps text-label-caps uppercase tracking-wider text-tertiary-fixed">{title}</h2>
         <div className="w-3 h-3 bg-tertiary-fixed animate-pulse" />
       </div>
-      <div className="p-stack-md font-mono-label text-mono-label space-y-4 max-h-64 overflow-y-auto">
+      <div className="dark-log-scroll p-stack-md font-mono-label text-mono-label space-y-4 max-h-64 overflow-y-auto">
         {entries.length === 0 && <div className="text-outline-variant">&gt; No recent agent activity.</div>}
         {entries.map((e, i) => (
           <div

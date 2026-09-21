@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
 import { useAsyncData } from '@/hooks/useAsyncData'
 import { fetchRepairs } from '@/services/repairService'
 import { fetchAssets } from '@/services/assetService'
@@ -21,18 +22,20 @@ import type { Asset, Repair, WebmcpExecution } from '@/types'
  * recent activity, urgent repairs sidebar, WebMCP activity, upcoming deadlines.
  */
 export default function TechnicianDashboard() {
+  const { user } = useAuth()
   const navigate = useNavigate()
   const repairsQ = useAsyncData<Repair[]>(() => fetchRepairs({ assignedToMe: true }), [])
   const assetsQ = useAsyncData<Asset[]>(() => fetchAssets({}), [])
   const webmcpQ = useAsyncData<WebmcpExecution[]>(async () => {
     const { data, error } = await supabase
-      .from('webmcp_tool_executions')
-      .select('*')
-      .order('created_at', { ascending: false })
+        .from('webmcp_tool_executions')
+        .select('*')
+        .eq('actor_id', user?.id ?? '')
+        .order('created_at', { ascending: false })
       .limit(10)
     if (error) throw error
     return (data ?? []) as WebmcpExecution[]
-  }, [])
+  }, [user?.id])
 
   const repairs = repairsQ.data ?? []
 

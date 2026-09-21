@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
 import { useAsyncData } from '@/hooks/useAsyncData'
 import { createRepairTicket, fetchRepairs } from '@/services/repairService'
 import { fetchAssets } from '@/services/assetService'
@@ -30,20 +31,22 @@ const CATEGORY_ICONS: Record<string, string> = {
 
 /** Employee Dashboard per Stitch `employee_dashboard.html`. */
 export default function EmployeeDashboard() {
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [reportOpen, setReportOpen] = useState(false)
 
   const repairsQ = useAsyncData<Repair[]>(() => fetchRepairs({ reportedByMe: true }), [])
   const assetsQ = useAsyncData<Asset[]>(() => fetchAssets({}), [])
   const webmcpQ = useAsyncData<WebmcpExecution[]>(async () => {
-    const { data, error } = await supabase
-      .from('webmcp_tool_executions')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(4)
+      const { data, error } = await supabase
+        .from('webmcp_tool_executions')
+        .select('*')
+        .eq('actor_id', user?.id ?? '')
+        .order('created_at', { ascending: false })
+        .limit(4)
     if (error) throw error
     return (data ?? []) as WebmcpExecution[]
-  }, [])
+  }, [user?.id])
 
   const repairs = repairsQ.data ?? []
   const assets = assetsQ.data ?? []
@@ -155,7 +158,7 @@ export default function EmployeeDashboard() {
                 </div>
                 <span className="text-[10px] font-mono-label text-neutral-400">AGENT READY</span>
               </div>
-              <div className="space-y-1.5 font-mono-label text-[11px] leading-tight text-neutral-300">
+              <div className="dark-log-scroll space-y-1.5 font-mono-label text-[11px] leading-tight text-neutral-300 max-h-64 overflow-y-auto">
                 {(webmcpQ.data ?? []).length === 0 && <div>&gt; No recent agent activity.</div>}
                 {(webmcpQ.data ?? []).map((e) => (
                   <div key={e.id} className="flex items-start gap-2">
