@@ -234,3 +234,46 @@ Applied Supabase migration `fix_webmcp_activity_log_visibility` to project `puao
 
 ### Current status
 FIXED and VERIFIED for the requested RLS visibility boundaries and build. Browser visual inspection and a separately-created authenticated own-actor insert were not performed; both are non-blocking for the policy diagnosis because the existing logging path already writes valid app-user actor IDs and the cross-actor write denial is live-verified.
+
+---
+
+## Entry 7 — 2026-09-26: Role-aware native WebMCP tool registration (exact 10/11/13/13 matrix)
+
+### Problem
+Chrome's WebMCP Tool Inspector showed tools that the signed-in role must not see: EMPLOYEE received `update_repair_status` (11 tools instead of 10), and after logout/in-page role switch the previous role's tools stayed discoverable (stale registrations).
+
+### Root cause
+1. `src/mcp/registerTools.ts` `getToolsForRole()` treated `roles: undefined` as "available to every role" (deny-by-omission). Nine tools, including `update_repair_status`, declared no `roles`, so they were registered for ALL roles — including EMPLOYEE. `nativeWebmcpManifest()` had the same "roles omitted = all roles" fallback.
+2. Registration called `document.modelContext.registerTool(descriptor)` without the second `{ signal }` option, and `resetRegistration()` only cleared module state. Chrome 146+/153 has no `unregisterTool`, so previously registered tools were never removed on sign-out or role change — only a full page reload produced a clean list.
+
+### Role matrix implemented (explicit allow-lists in `src/mcp/tools.ts`; registration is DENY-by-default)
+- Shared core (9, all roles): `search_assets`, `get_asset`, `get_asset_status`, `check_warranty`, `get_asset_repair_history`, `search_repairs`, `get_repair`, `add_repair_note`, `get_repair_history`.
+- `create_repair_ticket`: EMPLOYEE only.
+- `update_repair_status`: ADMIN, MANAGER, TECHNICIAN (EMPLOYEE excluded — NEW explicit roles entry).
+- `get_operational_alerts`: ADMIN, MANAGER, TECHNICIAN.
+- `find_available_technicians`, `get_technician_workload`: ADMIN, MANAGER.
+Totals: EMPLOYEE 10, TECHNICIAN 11, MANAGER 13, ADMIN 13. No duplicates (name-dedupe in `toolsForRole`). No technician-assignment tool added; four roles unchanged; ADMIN/MANAGER identical lists.
+
+### Files changed
+1. `src/mcp/tools.ts` — `McpTool.roles` is now a REQUIRED explicit `AppRole[]` ("undefined = all roles" comment removed); every tool declares its roles explicitly (`ALL_ROLES` constant for the shared core); `update_repair_status` gained `roles: ['ADMIN','MANAGER','TECHNICIAN']`; `executeTool()` role gate hardened to deny when `roles` missing/empty; `toolManifest()` no longer fabricates an all-roles default. Tool implementations/business logic unchanged.
+2. `src/mcp/registerTools.ts` — `toolsForRole(role)` single-source resolver: explicit non-empty `roles` required (deny-by-default) + per-role name dedupe. Each registration batch now creates an `AbortController` passed as `registerTool(descriptor, { signal })`; `registerNativeWebmcpTools(newRole)` aborts the previous batch (unregisters stale tools) before registering; `resetRegistration()` (sign-out) aborts too, so `getTools()` is empty while logged out. Handlers still delegate to `executeTool()` — execute-time auth/RBAC/RLS/audit untouched. `nativeWebmcpManifest(role)` now derives from `toolsForRole` (no separate matrix, role required).
+3. `src/App.tsx` — NOT changed (existing effect on `user?.id`/`user?.role` + `resetRegistration()` on no-user already drives the refresh lifecycle; the fixes are inside the registration layer).
+4. `dist/*` — rebuilt (`npm run build`).
+
+### Validation performed (real Chromium CDP automation, not assumed)
+Environment: `npm run preview` (dist build on :4173) + Chrome 154.0.8037.58 `--headless=new --enable-features=WebMCP` driven over CDP (`:9333`); login/sign-out through the real React UI (AuthPage form + Sidebar sign-out button); tool discovery read via `document.modelContext.getTools()` — the exact registry the WebMCP Tool Inspector displays (the Inspector panel itself is interactive-only Chrome UI and cannot be automated; same methodology as Entry 4).
+- Native API present on authenticated app page; PRE-AUTH `getTools()` = 0 tools.
+- Exact-set + exact-count verification per demo account, zero duplicates: EMPLOYEE (jordan.davis) = 10, TECHNICIAN (sam.chen) = 11, MANAGER (tanya.miller) = 13, ADMIN (admin@repairdesk.io) = 13. EMPLOYEE list contains `create_repair_ticket` and excludes `update_repair_status`/alerts/workload; TECHNICIAN contains `update_repair_status`+`get_operational_alerts` and excludes `create_repair_ticket`/workload tools; MANAGER=ADMIN 13 identical sets.
+- Allowed tool executed per role through the native API: EMPLOYEE `get_asset_status`(LAP-018) ✓, TECHNICIAN `search_assets` ✓, MANAGER `find_available_technicians` ✓, ADMIN `get_technician_workload` ✓.
+- Execution-time authorization still enforced: EMPLOYEE `check_warranty`/`create_repair_ticket` on another user's MON-044 → `NOT_FOUND`; TECHNICIAN `update_repair_status` on unassigned RD-1002 → `NOT_FOUND`; ADMIN forcing `create_repair_ticket` via the legacy bridge (`executeTool` path, tool NOT registered for ADMIN) → `FORBIDDEN: Your role (ADMIN) is not permitted...` — confirming registration filtering is not the only defense.
+- Stale-tool lifecycle: after UI sign-out (no page reload) `getTools()` = 0 for all four roles — abort-signal unregistration confirmed working in Chrome 154. In-page switch EMPLOYEE→(sign out)→TECHNICIAN without reload: exactly 11 tools, `update_repair_status` present, `create_repair_ticket`/workload tools absent.
+- `npm run typecheck` + `npm run build` pass. No probe mutation landed in demo data (all rejection paths).
+
+### Final status
+COMPLETE and VERIFIED for all four roles (10/11/13/13, no duplicates, no stale tools, execution RBAC + RLS intact).
+
+### Remaining notes
+- Registration filtering is a DISCOVERY control only; `executeTool()` + Supabase RLS remain the enforcement layer (defense in depth preserved).
+- `mcp.html` legacy bridge `tools/list` derives from the now-explicit `toolManifest()`, so it matches the same matrix (13 for ADMIN verified live).
+- Verification used `getTools()`/`executeTool()` over CDP because the Inspector panel can't be scripted; run the Inspector manually with `#enable-webmcp-testing` for the visual check.
+

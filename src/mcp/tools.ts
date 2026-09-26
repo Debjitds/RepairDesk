@@ -9,7 +9,7 @@ import {
   addRepairNote,
   fetchTechnicianWorkload,
 } from '@/services/repairService'
-import { warrantyStatus, type Asset, type Repair, type User } from '@/types'
+import { warrantyStatus, type AppRole, type Asset, type Repair, type User } from '@/types'
 import { formatRelative } from '@/lib/format'
 
 /**
@@ -25,9 +25,18 @@ export interface McpTool {
   name: string
   description: string
   inputSchema: object
-  roles?: Array<'ADMIN' | 'MANAGER' | 'TECHNICIAN' | 'EMPLOYEE'> // undefined = all roles
+  /**
+   * Explicit allow-list of roles permitted to use this tool.
+   * Native WebMCP registration is DENY-by-default: a tool without an
+   * explicit non-empty `roles` list is exposed to NO role — "roles omitted"
+   * never means "all roles".
+   */
+  roles: AppRole[]
   run: (input: any) => Promise<unknown>
 }
+
+/** Convenience for the core tools every role may discover (still an explicit list). */
+const ALL_ROLES: AppRole[] = ['ADMIN', 'MANAGER', 'TECHNICIAN', 'EMPLOYEE']
 
 async function requireUser(): Promise<User> {
   const { data, error } = await supabase.rpc('get_current_app_user' as never).then(
@@ -133,6 +142,7 @@ export const TOOLS: McpTool[] = [
     name: 'search_assets',
     description:
       'Search or list assets visible to the current user. When query is provided, filter by asset tag, name, or serial number. When query is empty or omitted, return all visible assets. Use status to filter those visible assets by status. Employees see only their assigned assets; technicians see relevant operational assets; managers/admins see the organization directory.',
+    roles: ALL_ROLES,
     inputSchema: {
       type: 'object',
       properties: {
@@ -151,6 +161,7 @@ export const TOOLS: McpTool[] = [
   {
     name: 'get_asset',
     description: 'Get full details for a single asset by asset tag or internal id.',
+    roles: ALL_ROLES,
     inputSchema: {
       type: 'object',
       properties: {
@@ -166,6 +177,7 @@ export const TOOLS: McpTool[] = [
   {
     name: 'get_asset_status',
     description: 'Get the current operational status of an asset (ACTIVE / IN_REPAIR / RETIRED) plus any open repair ticket.',
+    roles: ALL_ROLES,
     inputSchema: {
       type: 'object',
       properties: { asset: { type: 'string' } },
@@ -185,6 +197,7 @@ export const TOOLS: McpTool[] = [
   {
     name: 'check_warranty',
     description: 'Check the warranty state of an asset (ACTIVE / EXPIRING_SOON / EXPIRED) with dates.',
+    roles: ALL_ROLES,
     inputSchema: {
       type: 'object',
       properties: { asset: { type: 'string' } },
@@ -203,6 +216,7 @@ export const TOOLS: McpTool[] = [
   {
     name: 'get_asset_repair_history',
     description: 'List completed (resolved/closed) repairs for an asset.',
+    roles: ALL_ROLES,
     inputSchema: {
       type: 'object',
       properties: { asset: { type: 'string' } },
@@ -224,6 +238,7 @@ export const TOOLS: McpTool[] = [
     name: 'search_repairs',
     description:
       'Search repairs visible to the current user. Employees see their own tickets; technicians see assigned repairs; managers/admins see the organization queue.',
+    roles: ALL_ROLES,
     inputSchema: {
       type: 'object',
       properties: {
@@ -244,6 +259,7 @@ export const TOOLS: McpTool[] = [
   {
     name: 'get_repair',
     description: 'Get full details for a repair ticket by ticket number or id.',
+    roles: ALL_ROLES,
     inputSchema: {
       type: 'object',
       properties: { ticket: { type: 'string', description: 'Ticket number (e.g. RD-1042) or UUID' } },
@@ -289,6 +305,7 @@ export const TOOLS: McpTool[] = [
     name: 'update_repair_status',
     description:
       'Advance a repair through the lifecycle (OPEN→ASSIGNED→DIAGNOSING→IN_REPAIR→RESOLVED→CLOSED). Technicians may only update repairs assigned to them, and only to DIAGNOSING/IN_REPAIR/RESOLVED. Managers/admins have org-wide control. Invalid transitions are rejected by the server.',
+    roles: ['ADMIN', 'MANAGER', 'TECHNICIAN'],
     inputSchema: {
       type: 'object',
       properties: {
@@ -315,6 +332,7 @@ export const TOOLS: McpTool[] = [
   {
     name: 'add_repair_note',
     description: 'Add a note to a repair the current user participates in (reporter, assigned technician, or manager/admin).',
+    roles: ALL_ROLES,
     inputSchema: {
       type: 'object',
       properties: {
@@ -332,6 +350,7 @@ export const TOOLS: McpTool[] = [
   {
     name: 'get_repair_history',
     description: 'Get the full event timeline of a repair ticket.',
+    roles: ALL_ROLES,
     inputSchema: {
       type: 'object',
       properties: { ticket: { type: 'string' } },
@@ -482,8 +501,9 @@ export async function executeTool(name: string, input: unknown): Promise<{ succe
   try {
     const user = await requireUser()
 
-    // Role-restricted tool gating (in addition to RLS)
-    if (tool.roles && !tool.roles.includes(user.role)) {
+    // Role-restricted tool gating at execute time (defense in depth, in addition
+    // to registration filtering and Supabase RLS). Deny-by-default.
+    if (!tool.roles || !tool.roles.includes(user.role)) {
       await logExecution(name, input, null, `FORBIDDEN: role ${user.role} may not use ${name}`, started)
       return {
         success: false,
@@ -515,7 +535,7 @@ export function toolManifest() {
     name: t.name,
     description: t.description,
     inputSchema: t.inputSchema as object,
-    roles: (t.roles ?? ['ADMIN', 'MANAGER', 'TECHNICIAN', 'EMPLOYEE']) as string[],
+    roles: [...t.roles] as string[],
   }))
 }
 
