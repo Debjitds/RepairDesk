@@ -277,3 +277,45 @@ COMPLETE and VERIFIED for all four roles (10/11/13/13, no duplicates, no stale t
 - `mcp.html` legacy bridge `tools/list` derives from the now-explicit `toolManifest()`, so it matches the same matrix (13 for ADMIN verified live).
 - Verification used `getTools()`/`executeTool()` over CDP because the Inspector panel can't be scripted; run the Inspector manually with `#enable-webmcp-testing` for the visual check.
 
+---
+
+## Entry 8 — 2026-10-01: Fix Vercel 404 on hard refresh of SPA routes (production deep-link routing)
+
+### Problem
+On the deployed app (https://repairdesks.vercel.app), refreshing the browser on any React Router path (`/dashboard`, `/notifications`, `/settings`, `/assets`, `/repair-history`, `/my-repairs`, `/my-assets`, `/my-issues`, `/repairs/:id`) returned the Vercel "404 NOT_FOUND" page instead of the app. Client-side navigation worked; only direct server GETs of route paths failed.
+
+### Exact root cause (verified live, not assumed)
+The repository had NO Vercel configuration at all — no `vercel.json`, no `public/_redirects`, no `.vercel` project settings. Vercel served the Vite `dist` output as a plain static file set, so only real paths existed server-side: pre-fix probe returned `/` → 200, `/mcp.html` → 200, `/logo.png` → 200, but `/dashboard`, `/notifications`, `/settings` → **404**. BrowserRouter deep links need a server-level fallback rewrite to `index.html`; without it every hard refresh issues a GET for a path that doesn't exist as a file. No routing/auth/build code was involved — purely a deployment-config gap.
+
+### Exact files changed
+1. `vercel.json` — NEW (only file changed; commit `5c3f586`, pushed to `origin/main`, auto-deployed via the GitHub Vercel integration for Debjitds/RepairDesk):
+```json
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+```
+No source, UI, routing, build, auth, WebMCP, or database code was modified.
+
+### Why this doesn't hijack real resources
+Vercel applies `rewrites` AFTER the filesystem check: existing files always win. `/assets/*` (JS/CSS), `/logo.png`, `/mcp.html`, and favicon paths are real files in `dist` and keep serving with their original content types — verified in production after deploy (see below). `index.html` fallback is the standard Vercel SPA pattern; no client-side redirect hacks were added.
+
+### Local validation
+`npm run build` clean; served via `npm run preview` (production build, :4173) and validated with CDP-driven Chrome (real UI login): direct GET of 9 route paths → 200 app shell; `/mcp.html`, `/logo.png`, hashed `/assets/*` intact with correct content types; client-side sidebar nav + hard reload on `/notifications`, `/settings`, `/assets`, `/repair-history` stayed on route, still authenticated, fully rendered; ADMIN→`/my-repairs` role guard still redirected to `/dashboard`; unauthenticated `/dashboard` still bounced to `/auth`. 25/25 checks passed.
+
+### Production/Vercel validation (real deployed app)
+After pushing `vercel.json`, `/dashboard` flipped 404→200 within ~16s (Git-integration auto-deploy). Full suite re-run against https://repairdesks.vercel.app: 27/27 checks passed — every route direct-GETs 200; assets/`mcp.html`/`logo.png` not hijacked; ADMIN (admin@repairdesk.io) and EMPLOYEE (jordan.davis) hard-refreshed protected routes while staying signed in with correct pages rendered. Extra role coverage: TECHNICIAN (sam.chen) hard reload `/my-repairs` ✓ and MANAGER (tanya.miller) hard reload `/assets` ✓.
+
+### Authentication/role validation
+Supabase session persists across hard refreshes (localStorage) on production for all tested accounts; `RequireAuth` role protection and the unauthenticated `/auth` bounce behave exactly as before — the rewrite only affects the HTTP entry, not app logic.
+
+### WebMCP validation
+After hard refresh on production: ADMIN → exactly 13 tools, EMPLOYEE → exactly 10 (incl. `create_repair_ticket`, excl. `update_repair_status`), TECHNICIAN → exactly 11 (incl. `update_repair_status`+`get_operational_alerts`, excl. `create_repair_ticket`/workload), MANAGER → exactly 13; post-sign-out 0 tools; `get_technician_workload` executed successfully through `document.modelContext.executeTool` on the deployed site. Role-aware registration, mcp.html legacy bridge, executeTool() authorization, and RLS all intact.
+
+### Final status
+FIXED and VERIFIED IN PRODUCTION. Hard refresh works on all valid routes for all four roles; no Vercel 404 remains.
+
+### Remaining issue
+None. Note for future work: if Edge Functions or additional API routes are ever added under paths that also exist as real files, re-check the filesystem-before-rewrite precedence (real files still win; only non-existent paths fall through to `index.html`).
+
