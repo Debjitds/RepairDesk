@@ -319,3 +319,70 @@ FIXED and VERIFIED IN PRODUCTION. Hard refresh works on all valid routes for all
 ### Remaining issue
 None. Note for future work: if Edge Functions or additional API routes are ever added under paths that also exist as real files, re-check the filesystem-before-rewrite precedence (real files still win; only non-existent paths fall through to `index.html`).
 
+---
+
+## Entry 9 — 2026-10-23: Idempotent repair-ticket submission (E2E duplicate-submission + error-handling + employee-history findings)
+
+
+### Problem (from automated E2E suite — 6 findings)
+1. Four duplicate-submission scenarios all flagged the same symptom: submitting the same repair request twice created two open tickets (pre-existing duplicate pairs in demo data: RD-1006/RD-1016 "Laptop overheating during work", RD-1008/RD-1018, RD-1014/RD-1022, RD-1013/RD-1021 — all LAP-018).
+2. One scenario claimed a failed submission lost the form and showed no error ("page returned to My Assets", "no submission error displayed").
+3. One scenario could not find an employee "Repair History" page to search.
+
+### Exact root cause
+All four duplicate scenarios share ONE root cause: the create path was not idempotent.
+1. `src/services/repairService.ts` `createRepairTicket()` called the `create_repair_ticket` RPC (SECURITY DEFINER) unconditionally — the RPC validates auth, org, asset ownership, retired status, and title/description lengths, but performs NO duplicate check, so every call inserts a new ticket.
+2. `ReportIssueModal.submit()` in `src/pages/employee/Dashboard.tsx` disabled the button via `busy` state but never early-returned on `busy` inside the handler, so two rapid submit events (double Enter/click, automated retry) could both start before React re-rendered.
+3. The WebMCP `create_repair_ticket` tool (`src/mcp/tools.ts`) calls the same service, so agent/e2e repeats hit the same non-idempotent path.
+The "form lost / no error" finding did NOT reproduce in current `src` — the modal already keeps state and renders an inline `FormError` on failure; the behavior matches the older deployed bundle that predated the in-flight guards (stale-build artifact, not a separate code bug).
+Business rule confirmed BEFORE enforcing (PRD "Reliability": *prevent duplicate or conflicting operations*; TRD: *"duplicate ticket creation caused by repeated requests"*; architect.md §35: *avoid duplicate repair creation*; no doc forbids reusing a title later): **same asset + same title is a duplicate only while a matching ticket is OPEN (status not in RESOLVED/CLOSED)**. Once the prior ticket is RESOLVED/CLOSED, the same title is a legitimate recurring-issue report and a new ticket IS created.
+
+### Exact files changed
+1. `src/services/repairService.ts` — `createRepairTicket()` made idempotent and its return changed from `Promise<Repair>` to `Promise<{ repair: Repair; created: boolean }>`:
+   - `normalizeTicketTitle()` — trim, collapse whitespace, lowercase (duplicate-match key).
+   - Module-level `createTicketInFlight` Map keyed `asset_id|normalized title` — concurrent identical calls share ONE in-flight promise (kills the double-submit race for both UI and tool callers); entry removed in `finally`.
+   - Pre-check query BEFORE any write: `repairs` select filtered `.eq('asset_id')` + `.not('status','in','("RESOLVED","CLOSED")')` + limit 50; client-side normalized-title match returns the existing ticket with `created:false` (no INSERT issued at all). If the pre-check query itself fails, flow falls through to the RPC (which remains the final validator) — fail-open on read error only.
+   - RPC call unchanged otherwise; auth/RBAC/RLS untouched.
+2. `src/pages/employee/Dashboard.tsx` — `ReportIssueModal` (shared by employee Dashboard, My Issues, My Assets):
+   - `submit()` early-returns when `busy` (in-flight guard independent of button disabled state).
+   - On `created:false` (duplicate): modal STAYS OPEN, all entered values preserved, lime success banner "Already submitted — ticket #RD-xxxx is still open for this issue. No duplicate ticket was created.", submit button latches to disabled "Already Submitted" (re-enabled when asset/title is edited). On `created:true`: closes + refreshes as before. On error: stays on the form with inline `FormError` and preserved values (issue-5 requirement).
+   - `FormSuccess` added to the primitives import.
+3. `src/mcp/tools.ts` — `create_repair_ticket` tool updated to the new `{repair, created}` service shape; result now includes `duplicate: !created` and a "Duplicate prevented: …" message; tool description documents the idempotent behavior for agents. Roles matrix (`['EMPLOYEE']`) and every other tool unchanged.
+4. `dist/*` — regenerated via `npm run build`.
+5. `memory.md` — this appended entry (no previous entries modified or deleted).
+
+### Exact Vercel/routing fix
+NONE required or applied in this task. `vercel.json` SPA rewrite from Entry 8 is unchanged and still in place; no route paths changed; no new pages/nav added. (Reminder: the fix only reaches production after commit + push — Vercel auto-deploys from Git; nothing was committed during this task.)
+
+### Employee Repair History finding (issue 6) — test assumption wrong, NO feature added
+`docs/rules.md` §9 "Approved Pages" lists Employee pages as exactly: Dashboard, My Issues, My Assets, Notifications, Settings — with "Do not invent additional navigation sections without a requirement." The PRD permission matrix grants employees "Related/own relevant history", which is already delivered by (a) My Issues — searchable across ticket/asset/issue/technician with status filters including RESOLVED/CLOSED, and (b) the Asset Detail page "Repair History" panel. The Sidebar EMPLOYEE nav already matches the approved set. Correct action: point the `Search employee repair history records` scenario at `/my-issues` (or the Asset Detail history panel), not a nonexistent employee `/repair-history` route (that route is ADMIN/MANAGER/TECHNICIAN only by design).
+
+### Local validation (live browser run, not assumed)
+- `npm run typecheck` passed; `npm run build` passed (109 modules, clean).
+- Dev server (`npm run dev`, :5173) + real browser, logged in through the UI as EMPLOYEE jordan.davis:
+  - Baseline My Issues: 20 tickets (18 open, 2 resolved); open duplicates RD-1006/RD-1016 present for "Laptop overheating during work" (LAP-018).
+  - Resubmitted the exact same asset+title via Report an Issue: modal stayed open, values preserved, banner showed "Already submitted — ticket #RD-1016 is still open for this issue. No duplicate ticket was created.", button disabled as "ALREADY SUBMITTED" with tooltip.
+  - Network log confirmed the duplicate check is a read-only GET on `repairs` and NO POST/INSERT was issued.
+  - After hard reload (fresh DB read): counts unchanged (20/18), highest ticket still RD-1022 (no RD-1023), still exactly 2 tickets with that title — no new duplicate.
+  - In-flight "SUBMITTING…" disabled state observed on click (rapid double-click cannot fire a second request).
+  - Screenshots: `01_myissues_before.png`, `02_duplicate_banner.png`, `03_myissues_after.png` (repo root). No console errors (only pre-existing React Router v7 future-flag warnings).
+
+### Production/Vercel validation
+NOT performed — changes are local only (`src` + rebuilt `dist`); they must be committed/pushed for Vercel auto-deploy, then the E2E scenarios re-run against https://repairdesks.vercel.app. No claim is made for the deployed site.
+
+### Authentication/role validation
+Unchanged and preserved: Supabase RLS untouched, `create_repair_ticket` RPC still the final validator (authenticated org user, same-org asset, EMPLOYEE own-asset only, retired rejection, length checks). The pre-check SELECT runs under the caller's own RLS policy (employee sees own/related repairs — verified live under the jordan.davis session). No new pages, no nav changes, no permission broadening; four roles intact.
+
+### WebMCP validation
+`create_repair_ticket` tool code updated (new service return shape, `duplicate` flag, idempotency description) and typecheck/build pass, but role-by-role tool discovery/execution was NOT re-run live in a WebMCP-enabled Chrome in this session. The 10/11/13/13 role matrix, registration lifecycle, and execute-time RBAC were not modified by this fix (only the tool's run() body/description and the shared service changed).
+
+### Final status
+FIXED and VERIFIED LOCALLY for the duplicate-submission flow (single shared fix; the other three duplicate scenarios exercise the identical code path but were not individually re-run). Issue 5 (error handling) hardened in code and consistent with current source; original report attributed it to a stale deployed bundle. Issue 6 resolved as "test assumption wrong" — no unnecessary feature added. NOT yet deployed or re-verified in production.
+
+### Remaining issues
+1. Pre-existing duplicate tickets created BEFORE the fix remain in the demo DB (RD-1006/1016, RD-1008/1018, RD-1013/1021, RD-1014/1022, RD-1011/1019); the guard prevents NEW duplicates only. Cleanup needs DB access.
+2. No DB-level uniqueness enforcement was added: the Supabase MCP server returned "Unauthorized (no SUPABASE_ACCESS_TOKEN)", so the RPC definition could not be inspected or amended. Recommended follow-up once authorized: duplicate guard (or partial unique index on `(asset_id, lower(title)) WHERE status NOT IN ('RESOLVED','CLOSED')`) inside `create_repair_ticket`, so protection is not client-side-only.
+3. Client-side guard covers same-browser/session races; two different clients submitting the identical new title within the same instant could still both pass the pre-check until the RPC-side constraint from item 2 exists.
+4. The `created:true` (first-time creation) path was not exercised live (existing open duplicate intercepted the verification submit, which was intentional to avoid polluting demo data); covered by typecheck/build and unchanged RPC logic, but re-run the E2E suite after deploy to confirm end-to-end.
+5. Changes are uncommitted; production verification of all six scenarios is pending deploy.
+

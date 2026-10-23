@@ -273,7 +273,7 @@ export const TOOLS: McpTool[] = [
   {
     name: 'create_repair_ticket',
     description:
-      'Report a new repair ticket (status OPEN). Only EMPLOYEE users may create repair tickets, and only for assets assigned to them. ADMIN/MANAGER manage and assign repairs; TECHNICIANs work on assigned repairs.',
+      'Report a new repair ticket (status OPEN). Only EMPLOYEE users may create repair tickets, and only for assets assigned to them. ADMIN/MANAGER manage and assign repairs; TECHNICIANs work on assigned repairs. Idempotent: repeating the same report (same asset + same title) while a matching ticket is still open returns the existing ticket instead of creating a duplicate.',
     roles: ['EMPLOYEE'],
     inputSchema: {
       type: 'object',
@@ -287,7 +287,7 @@ export const TOOLS: McpTool[] = [
     },
     async run(input) {
       const asset = await resolveAsset(input.asset)
-      const repair = await createRepairTicket({
+      const { repair, created } = await createRepairTicket({
         asset_id: asset.id,
         title: String(input.title),
         description: String(input.description),
@@ -295,9 +295,12 @@ export const TOOLS: McpTool[] = [
       })
       return {
         success: true,
+        duplicate: !created,
         ticket_number: repair.ticket_number,
         status: repair.status,
-        message: `Ticket ${repair.ticket_number} created for ${asset.asset_tag} (OPEN).`,
+        message: created
+          ? `Ticket ${repair.ticket_number} created for ${asset.asset_tag} (OPEN).`
+          : `Duplicate prevented: ${asset.asset_tag} already has open ticket ${repair.ticket_number} with the same issue. No new ticket was created.`,
       }
     },
   },

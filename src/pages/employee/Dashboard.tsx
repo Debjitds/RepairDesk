@@ -14,6 +14,7 @@ import {
   Field,
   inputCls,
   FormError,
+  FormSuccess,
   NeoButton,
 } from '@/components/ui/primitives'
 import { dueLabel, formatRelative, initials } from '@/lib/format'
@@ -337,10 +338,15 @@ export function ReportIssueModal({
   const [priority, setPriority] = useState<RepairPriority>('MEDIUM')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false)
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
+    // In-flight guard: repeated clicks/enters cannot fire a second request.
+    if (busy) return
     setError(null)
+    setNotice(null)
     if (!assetId) {
       setError('Select the asset with the problem.')
       return
@@ -355,14 +361,21 @@ export function ReportIssueModal({
     }
     setBusy(true)
     try {
-      await createRepairTicket({
+      const { repair, created } = await createRepairTicket({
         asset_id: assetId,
         title: title.trim(),
         description: description.trim(),
         priority,
       })
-      onCreated()
+      if (created) {
+        onCreated()
+      } else {
+        // Duplicate submission: surface the existing open ticket, keep form state.
+        setAlreadySubmitted(true)
+        setNotice(`Already submitted — ticket #${repair.ticket_number} is still open for this issue. No duplicate ticket was created.`)
+      }
     } catch (err) {
+      // Stay on the form with all entered values preserved and show the failure inline.
       setError(err instanceof Error ? err.message : 'Failed to submit issue')
     } finally {
       setBusy(false)
@@ -382,8 +395,17 @@ export function ReportIssueModal({
         </div>
         <div className="p-5 space-y-4">
           <FormError message={error} />
+          <FormSuccess message={notice} />
           <Field label="Asset with the problem">
-            <select className={inputCls} value={assetId} onChange={(e) => setAssetId(e.target.value)} required>
+            <select
+              className={inputCls}
+              value={assetId}
+              onChange={(e) => {
+                setAssetId(e.target.value)
+                setAlreadySubmitted(false)
+              }}
+              required
+            >
               <option value="" disabled>
                 Select an asset…
               </option>
@@ -399,7 +421,10 @@ export function ReportIssueModal({
               className={inputCls}
               placeholder="e.g. Laptop is overheating"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => {
+                setTitle(e.target.value)
+                setAlreadySubmitted(false)
+              }}
               maxLength={200}
               required
             />
@@ -431,8 +456,9 @@ export function ReportIssueModal({
           <NeoButton tone="surface" onClick={onClose} type="button">
             Cancel
           </NeoButton>
-          <NeoButton type="submit" disabled={busy}>
-            <Icon name="send" /> {busy ? 'Submitting…' : 'Submit Issue'}
+          <NeoButton type="submit" disabled={busy || alreadySubmitted} title={alreadySubmitted ? 'This issue already has an open ticket' : undefined}>
+            <Icon name={alreadySubmitted ? 'check_circle' : 'send'} />{' '}
+            {busy ? 'Submitting…' : alreadySubmitted ? 'Already Submitted' : 'Submit Issue'}
           </NeoButton>
         </div>
       </form>
