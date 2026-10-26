@@ -38,8 +38,20 @@ export default function EmployeeRepairHistory() {
   )
   const repairs = q.data ?? []
 
-  const filtered = useMemo(() => repairs.filter((r) => matches(r, filter)), [repairs, filter])
-  const countFor = (f: HistoryFilter) => repairs.filter((r) => matches(r, f)).length
+  // Immediate client-side match so the list AND the count badge narrow as the user
+  // types (independent of the debounced service query) — guarantees the search
+  // actually filters rather than leaving the full record count unchanged.
+  const term = search.trim().toLowerCase()
+  const matchesTerm = (r: Repair) =>
+    !term ||
+    r.ticket_number.toLowerCase().includes(term) ||
+    r.title.toLowerCase().includes(term) ||
+    (r.asset?.asset_tag ?? '').toLowerCase().includes(term) ||
+    (r.asset?.name ?? '').toLowerCase().includes(term) ||
+    (r.technician?.full_name ?? '').toLowerCase().includes(term)
+
+  const filtered = useMemo(() => repairs.filter((r) => matches(r, filter) && matchesTerm(r)), [repairs, filter, term])
+  const countFor = (f: HistoryFilter) => repairs.filter((r) => matches(r, f) && matchesTerm(r)).length
 
   return (
     <>

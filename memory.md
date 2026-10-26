@@ -872,4 +872,34 @@ Only the My Issues table gained a column; no data/schema/RLS change, no other pa
 ### Final status
 Feature COMPLETE and BUILD-VERIFIED. My Issues now shows a Time column derived from the real `created_at` issue timestamp (locale-formatted, guarded against invalid dates). UI change is source-only pending commit/push/deploy like the rest of Entries 11–22.
 
+---
+
+## Entry 23 — 2026-10-26: Fourteenth E2E run — fix LAP-018 notifications deep-linking to the wrong (MOB-011) repair; make repair-history search narrow immediately
+
+### Problem
+1. `Review employee-relevant repair updates from notifications to history`: a LAP-018 repair-update notification opened RD-1142 / MOB-011 instead of the LAP-018 repair.
+2. `Search employee repair history records`: typing LAP-018 in Repair History did not narrow the list/count ("SHOWING 124 RECORDS" / "ALL 124" unchanged).
+
+### Root causes
+1. SEED-DATA bug from Entry 21: the LAP-018-titled notifications were inserted with `related_repair_id = (SELECT id FROM repairs WHERE reported_by=Jordan AND status open ORDER BY created_at DESC LIMIT 1)` WITHOUT filtering by asset — so it bound a MOB-011 repair while `related_asset_id` was LAP-018. The deep link correctly uses `related_repair_id` (`openRelated` → `/repairs/:id`), so it opened the wrong asset. No app-code defect; the notification payload was internally inconsistent.
+2. The repair-history/My Issues search relied on the debounced service query; the component list/count did not independently apply the term, so on the deployed (stale) bundle the count appeared unchanged. (Also note: Jordan has 143 own repairs of which 125 are on LAP-018, so a correct LAP-018 search narrows 143→125 — a real but small delta that can look like "no change".)
+
+### Fixes
+1. Data (live SQL): UPDATEd every Jordan notification whose `related_asset_id` = LAP-018 but whose `related_repair_id` pointed to a non-LAP-018 repair → re-pointed to a LAP-018 repair (prefer open, newest). Re-marked 2 LAP-018 notifications unread. Verified: all LAP-018 notifications now `consistent=true` (linked repair's asset = LAP-018); 2 unread. Deep links now open the correct asset/history.
+2. `src/pages/employee/MyIssues.tsx` and `src/pages/employee/RepairHistory.tsx`: added an IMMEDIATE client-side term filter (over ticket_number, title, asset_tag, asset name, technician) applied in the `filtered` memo AND the per-chip `countFor`, so the visible rows and the count badge narrow as the user types, independent of the debounced service query. `fetchRepairs` still applies its own search (defense in depth).
+
+### Non-breaking
+No schema/RLS change. Notification deep-link handler (`openRelated`) unchanged — it was correct; only the seed data was fixed. Search filters are additive (they only narrow; empty term shows all). My Issues dedup/status chips and Repair History All/Open/Completed chips still work; counts now reflect the active search term.
+
+### Verification
+- SQL read-back: LAP-018 notifications consistent (linked_asset_tag=LAP-018) + 2 unread; Jordan 143 own repairs, 125 on LAP-018.
+- `npm run build` passes (tsc -b && vite build; 110 modules; EXITCODE=0).
+
+### Not done / remaining
+1. #1 fix is LIVE (data). #2 UI (immediate filter) is source-only until committed/pushed/deployed. Data-volume caveat: searching a common asset like LAP-018 narrows only ~143→125 because most seeded tickets target LAP-018; a distinctive term (e.g. a ticket number) narrows sharply.
+2. When seeding notifications in future, ALWAYS bind `related_repair_id` to a repair whose `asset_id` equals `related_asset_id` (and matches the title) to avoid wrong-context deep links.
+
+### Final status
+DB + CODE changes COMPLETE. LAP-018 repair-update notifications now deep-link to the correct LAP-018 repair (seed data fixed and verified consistent), and the employee Repair History / My Issues search now narrows the list and count immediately as the user types. Build green; data fix live, UI change pending deploy.
+
 

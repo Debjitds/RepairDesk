@@ -65,9 +65,20 @@ export default function EmployeeMyIssues() {
     return out
   }, [repairs])
 
+  const term = search.trim().toLowerCase()
   const filtered = useMemo(
-    () => uniqueRepairs.filter((r) => statusMatches(r, statusFilter)),
-    [uniqueRepairs, statusFilter],
+    () =>
+      uniqueRepairs.filter(
+        (r) =>
+          statusMatches(r, statusFilter) &&
+          (!term ||
+            r.ticket_number.toLowerCase().includes(term) ||
+            r.title.toLowerCase().includes(term) ||
+            (r.asset?.asset_tag ?? '').toLowerCase().includes(term) ||
+            (r.asset?.name ?? '').toLowerCase().includes(term) ||
+            (r.technician?.full_name ?? '').toLowerCase().includes(term)),
+      ),
+    [uniqueRepairs, statusFilter, term],
   )
 
   const kpi = {
