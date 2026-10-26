@@ -525,4 +525,48 @@ CODE + DB changes COMPLETE and BUILD-VERIFIED. Duplicate detection restored to t
 ### Final status
 CODE changes COMPLETE and BUILD-VERIFIED. Notification rows now deep-link to the related repair while a separate button preserves in-place read; employees get a searchable Repair History panel on Asset Detail; the report-issue flow validates client-side (no retired/unassigned assets, length bounds) and shows a visible inline error without creating a ticket on invalid/duplicate submits; the technician asset directory is limited to operational assets and hides retired records. Production E2E re-verification pending deploy.
 
+---
+
+## Entry 13 — 2026-10-26: Fifth E2E run — notifications read/empty-inbox reconciliation + resilient QA seed
+
+### Problem (fifth automated E2E run — 4 notification findings)
+1. `Employee views own assets and repair-related notifications together`: Notifications page showed "0 alerts" / "No notifications" for Jordan Davis (labelled Environment — seed needed).
+2. `Employee clears all read notifications`: Clear Read left NO unread items; inbox empty (labelled UI).
+3. `Open notifications and mark a message as read`: opened notification did not appear under the Read inbox (labelled UI).
+4. `Employee marks a notification as read`: unread count went to 00 but the Read inbox was empty (labelled UI).
+
+### Investigation (live, verified — not assumed)
+- Jordan had exactly 1 notification and it was already `is_read = true` (0 unread). The suite's own flow (mark read → Clear Read) drains the inbox, so later assertions see "No notifications." Root cause of ALL FOUR is an empty/depleted inbox, not read-state logic.
+- Deployed RPCs are CORRECT: `clear_read_notifications` deletes only `WHERE user_id = v_user.id AND is_read = true` (never touches unread); `mark_notifications_read(p_ids)` sets `is_read = true`. So #2 is not a real code bug — it only *looked* like one because there were no unread rows to keep. No RPC change was required.
+- The read/ALL/UNREAD/READ filter in Notifications.tsx is correct (`filter==='UNREAD' ? !is_read : is_read`).
+
+### UI reconciliation (notifications click)
+- Entry 12 had made the whole notification ROW navigate to the repair (to satisfy that run's "click should open repair context"). This run needs the opposite for verification: after opening/marking, the item must STAY on the Notifications page and be visible under the Read filter. These can't both be a single row click.
+- Resolution: row click now **marks read IN PLACE** (no navigation) so the Unread→Read transition and the Read-filter membership are immediately verifiable (#3/#4). Deep-linking to the repair is preserved via the separate "Open" strip (Ticket/Asset row), which keeps the Entry 12 capability without wiping the feed. The dedicated "Mark as Read" button (stopPropagation) also remains. Reverted the `if (hasTarget) openRelated(n)` inside the row onClick.
+
+### Files changed
+1. `src/pages/shared/Notifications.tsx` — notification row `onClick` reverts to mark-read-in-place only (removed row-level navigation); updated `aria-label` and inline comment. "Open" strip navigation + "Mark as Read" button unchanged, so repair-context deep link still exists.
+2. Database (Supabase `puaobtjdcnlxixplpqjx`) — resilient QA fixture: `DELETE`d all notifications for the two EMPLOYEE ids, then `INSERT`ed a deterministic read+unread mix via elevated SQL (app-role insert is blocked by RLS `notifications_insert_block`; the management connection writes directly): Jordan Davis → 3 UNREAD (REPAIR_STATUS IN_REPAIR, REPAIR_ASSIGNMENT, CRITICAL_REPAIR; all reference LAP-018) + 2 READ (REPAIR_RESOLVED MOB-011, REPAIR_CLOSED LAP-018); Casey Wong → 1 UNREAD (REPAIR_CREATED MON-044) + 1 READ (WARRANTY_WARNING MON-044). Related-repair/asset FKs resolved by subqueries on the newest repair per asset. Admin/manager/technician notifications untouched.
+3. `dist/*` — rebuilt (`npm run build`, EXITCODE=0).
+4. `memory.md` — this appended entry (no prior entries modified/deleted; the Entry 12 row-navigation note is superseded here for the row click only).
+
+### Why this makes the specs pass (deterministic)
+- #1: inbox now has 5 repair-related rows for Jordan.
+- #2: Clear Read removes the 2 read rows and leaves 3 unread (inbox non-empty).
+- #3/#4: opening marks read in place (unread 3→2, item still shown, now under the Read filter which already had 2) — no navigation, no wiped feed.
+
+### QA note / recurring caveat
+The suite drains read notifications via Clear Read each run, so the fixture should be RE-SEEDed before the notification specs are run (this is an environment step; the user's own fix for #1 says "seed before this test runs"). A long-term alternative is a seed script or making Clear Read archive instead of delete, but that changes product behavior and was NOT done.
+
+### Verification
+- SQL read-back: Jordan total 5 (2 read / 3 unread / 5 repair-related / 4 reference LAP-018); Casey total 2 (1 read / 1 unread).
+- `npm run build` (`tsc -b && vite build`) passes — 109 modules, EXITCODE=0.
+
+### Not done / remaining
+1. The source (this + Entries 11/12) is still UNCOMMITTED on branch `fix/Employee-Issues`; `origin/main` (Vercel production) is further behind, and `dist/` is untracked. Uncommitted fixes never reach the deployed app the E2E suite hits — the dominant reason identical symptoms keep re-appearing across runs. Deploying requires commit + push/merge (pending explicit user approval).
+2. No live browser re-run of the 4 notification specs this session (build + SQL read-back only).
+
+### Final status
+CODE + DB changes COMPLETE and BUILD-VERIFIED. Notification read/clear specs are addressed by reverting the row click to in-place mark-read (verifiable under the Read filter, feed never wiped, deep link retained via the Open strip) and by seeding a resilient read+unread repair-related notification fixture for both employees. Production E2E re-verification requires committing/pushing the pending changes and re-seeding before the notification run.
+
 
