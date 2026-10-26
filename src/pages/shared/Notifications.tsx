@@ -214,6 +214,22 @@ export default function NotificationsPage() {
         </div>
       </div>
 
+      {/* Active-search summary: makes it explicit that unrelated alerts were excluded */}
+      {search.trim() && (
+        <div className="mb-stack-lg bg-tertiary-fixed text-on-tertiary-fixed border-2 border-primary px-4 py-2 flex flex-wrap items-center justify-between gap-3">
+          <span className="font-mono-label text-[12px] uppercase font-bold flex items-center gap-2">
+            <Icon name="filter_alt" className="text-[16px]" />
+            Filtering by “{search.trim()}” — showing {filtered.length} of {notifications.length} notifications
+          </span>
+          <button
+            onClick={() => setSearch('')}
+            className="bg-white text-black border-2 border-primary font-label-caps text-[11px] uppercase font-bold px-2 py-1 flex items-center gap-1 hover:bg-surface-container-highest"
+          >
+            <Icon name="close" className="text-[14px]" /> Clear search
+          </button>
+        </div>
+      )}
+
       {/* Feed */}
       <div className="bg-surface border-2 border-primary industrial-shadow">
         <div className="border-b-2 border-primary p-stack-md bg-surface-container-highest flex justify-between items-center">
@@ -224,7 +240,7 @@ export default function NotificationsPage() {
             </h2>
           </div>
           <span className="font-mono-label text-[12px] font-bold bg-primary text-surface px-2 py-0.5">
-            {filtered.length} ALERTS
+            {search.trim() ? `${filtered.length} of ${notifications.length} ALERTS` : `${filtered.length} ALERTS`}
           </span>
         </div>
         <div className="divide-y-2 divide-primary">

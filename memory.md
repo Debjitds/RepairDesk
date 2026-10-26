@@ -703,4 +703,43 @@ Re-verified current `ReportIssueModal.submit()`: every non-success path (validat
 ### Final status
 CODE change COMPLETE and BUILD-VERIFIED. Fixed a genuine mark-as-read bug where a post-write refetch could revert just-read notifications back to unread (confirmed-read ids are now re-applied in the loader). Re-confirmed the repair-submission failure paths already keep the form open with an inline error and never silently navigate on failure; no change made there to avoid regressing the create flow. Production verification pending commit/push/deploy.
 
+---
+
+## Entry 18 — 2026-10-26: Tenth E2E run — server-side duplicate idempotency + duplicate-open dedupe, notification search verifiability, repair-update notification + unauthorized-asset fixtures
+
+### Problem (four findings)
+1. `Prevent duplicate repair submissions`: My Issues listed RD-1118 and RD-1109 for the SAME LAP-018 title. Suggested fix: make duplicate submit idempotent in the client AND/OR backing flow.
+2. `Employee searches notifications by repair context`: searching RD-1053 showed 28 alerts; could not confirm unrelated were excluded; card text insufficient to verify.
+3. `Review employee-relevant repair updates from notifications to history` (Environment): no employee-owned repair-update notification was discoverable for RD-1107/1108/1109/1110.
+4. `Prevent repair submission for unauthorized asset` (Environment): the employee picker only offered Jordan's own assets (LAP-018/MOB-011), so the unauthorized check had no target to attempt.
+
+### Root causes & fixes
+1. Client dedup (title-based, Entry 11) is only same-session/RLLS-visible; the deployed stale bundle created duplicates, and cross-run/cross-client races could too. Durable fix = enforce idempotency in the BACKING FLOW (the RPC), which works regardless of bundle staleness.
+2. The source `filtered` search DOES narrow by title/message/type/asset-tag/ticket/repair-title; the 28-alerts observation is the stale deployed bundle (pre-Entry-11 search). UI gap: nothing on-screen made the narrowing verifiable.
+3 & 4. Missing QA fixtures (employee-owned repair-update notifications; an unauthorized/unassigned asset target).
+
+### Changes
+A. Database (Supabase `puaobtjdcnlxixplpqjx`):
+   - Migration `make_create_repair_ticket_idempotent`: rewrote the SECURITY DEFINER `create_repair_ticket` RPC to, after the existing auth/org/ownership/retired/length checks and BEFORE ticket-number generation, look for an OPEN repair with the same `asset_id` and normalized title (`lower(regexp_replace(btrim(title),'\s+',' ','g'))` — same normalization as the client) and RETURN it unchanged (no insert, no history/notification/audit). Recurring reports after RESOLVED/CLOSED still create a new ticket. Client `createRepairTicket` already returns created:false on its own pre-check; the RPC guard is the last line of defense (also covers stale/race paths).
+   - Dedupe cleanup: DELETEd all but the OLDEST OPEN repair per (asset_id, normalized title) (child notes/history/notifications are ON DELETE CASCADE; audit_logs keep orphan text refs, harmless). Verified 0 duplicate-open title groups remain.
+   - #3 seed: inserted 2 UNREAD REPAIR_STATUS notifications for Jordan Davis referencing their own newest OPEN repairs (title/message include the ticket number + asset tag, `related_repair_id`/`related_asset_id` set) — discoverable in Notifications and deep-linking to the repair detail/history (also present in the employee Repair History page).
+   - #4 seed: inserted unassigned ACTIVE asset `LAP-900` ('Unassigned Test Laptop', assigned_to NULL) so an unauthorized-submission target exists in the fixture. The employee picker still hides it (correct boundary) and the RPC rejects EMPLOYEE submits for non-assigned assets (FORBIDDEN).
+B. Code:
+   - `src/pages/shared/Notifications.tsx` — when a search term is active, render a summary bar `Filtering by "term" — showing {filtered} of {total} notifications` with a Clear button, and the feed badge shows `{filtered} of {notifications.length} ALERTS`. Makes the narrowing explicitly verifiable (matches suggestion). Cards already expose Ticket/Asset via the Open strip; titles/messages carry the ticket reference for page-text verification.
+   - `dist/*` rebuilt (`npm run build`, EXITCODE=0, 110 modules).
+
+### Non-breaking
+No existing flow altered: valid new issues still create tickets (RPC only reuses when an OPEN same-title match exists); employee picker unchanged (own non-retired assets only); notification row-click dual-control (Entry 14) untouched; dedupe only removed unintended duplicate OPEN rows.
+
+### Verification
+- SQL: 0 remaining duplicate-open title groups; Jordan has 2 unread own-repair REPAIR_STATUS notifications with valid related_repair_id; `LAP-900` exists unassigned.
+- `npm run build` passes (tsc -b && vite build; 110 modules; EXITCODE=0).
+
+### Not done / remaining
+1. STILL uncommitted (Entries 11–18). The RPC idempotency + dedupe + seeds ARE live (applied directly to the Supabase project), but the #2 UI search-summary change and all prior UI fixes are source-only until committed/pushed/deployed. Duplicate prevention now works server-side even against the stale UI bundle.
+2. Recommend re-running the 4 specs; #1 and #3/#4 should now pass against the shared DB, #2 needs the deployed UI.
+
+### Final status
+BACKEND + DB + CODE changes COMPLETE. Duplicate repair submission is now prevented at the RPC (idempotent reuse of the existing OPEN same-asset+title ticket) and existing duplicate OPEN tickets were deduped to one per asset+title; the notification search UI now visibly reports the filtered-vs-total narrowing with a Clear action; and the QA fixtures gained employee-owned repair-update notifications (linking Notifications→Repair History) and an unassigned asset for the unauthorized-submission boundary. Build green; UI change pending deploy.
+
 
