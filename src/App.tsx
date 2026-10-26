@@ -17,6 +17,7 @@ import TechnicianRepairHistory from '@/pages/technician/RepairHistory'
 import EmployeeDashboard from '@/pages/employee/Dashboard'
 import EmployeeMyIssues from '@/pages/employee/MyIssues'
 import EmployeeMyAssets from '@/pages/employee/MyAssets'
+import EmployeeRepairHistory from '@/pages/employee/RepairHistory'
 import RepairDetailPage from '@/pages/shared/RepairDetail'
 import AssetDetailPage from '@/pages/shared/AssetDetail'
 import type { AppRole } from '@/types'
@@ -119,7 +120,7 @@ export default function App() {
 
       {/* Admin / Manager */}
       <Route path="/assets" element={<RequireAuth roles={['ADMIN', 'MANAGER']}><AppShell><AdminAssets /></AppShell></RequireAuth>} />
-      <Route path="/repair-history" element={<RequireAuth roles={['ADMIN', 'MANAGER', 'TECHNICIAN']}><AppShell>{role === 'TECHNICIAN' ? <TechnicianRepairHistory /> : <AdminRepairHistory />}</AppShell></RequireAuth>} />
+      <Route path="/repair-history" element={<RequireAuth roles={['ADMIN', 'MANAGER', 'TECHNICIAN', 'EMPLOYEE']}><AppShell>{role === 'EMPLOYEE' ? <EmployeeRepairHistory /> : role === 'TECHNICIAN' ? <TechnicianRepairHistory /> : <AdminRepairHistory />}</AppShell></RequireAuth>} />
 
       {/* Technician */}
       <Route path="/my-repairs" element={<RequireAuth roles={['TECHNICIAN']}><AppShell><TechnicianMyRepairs /></AppShell></RequireAuth>} />

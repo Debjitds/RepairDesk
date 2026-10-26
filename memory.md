@@ -604,4 +604,37 @@ Jordan's inbox already contains the click-through targets: REPAIR_STATUS "Repair
 ### Final status
 UI change COMPLETE and BUILD-VERIFIED. Repair-related notification rows now mark read and open their linked repair detail/history (RD-1066/LAP-018), while the explicit "Mark as Read" button preserves in-place read verification — reconciling the conflicting notification specs without regressing other flows. Production verification pending commit/push/deploy.
 
+---
+
+## Entry 15 — 2026-10-26: Seventh E2E run — restore employee Repair History (nav + route + searchable page) and harden submission success/failure handling
+
+### Problem (seventh automated E2E run — 2 findings)
+1. `Search employee repair history records`: "Repair History is not available in the authenticated employee navigation, so repair records could not be searched." Expected an employee Repair History area with search/filter.
+2. `Handle repair submission errors gracefully`: "The repair request submission returned to My Assets without showing a user-visible error. The request was not shown as open." Expected a visible error + no silent navigation when the create did not persist.
+
+### Decision on #1 (design fork resolved by the test's own guidance)
+Prior sessions (Entry 9) concluded employees intentionally had NO separate Repair History page (only the 5 approved sections: Dashboard, My Issues, My Assets, Notifications, Settings), with history via My Issues. This run's suggested fix explicitly permits "restore the employee-facing Repair History navigation item and route if it is still a supported flow." Given the repeated E2E requirement, Repair History is now treated as a SUPPORTED employee flow and was restored (additive — does not remove or alter any existing page/route, so existing spot-check flows are untouched).
+
+### Files changed
+1. `src/pages/employee/RepairHistory.tsx` — NEW. Employee-scoped, read-only, searchable history of the signed-in employee's own reported repairs (`fetchRepairs({ reportedByMe: true, search })`). Prominent search input (matches ticket/asset/issue/technician) + All/Open/Completed filter chips with live counts (Completed = RESOLVED+CLOSED). Rows open `/repairs/:id`. Verified data: Jordan Davis has 86 own repairs incl. RD-1001 (2 completed), so `RD-1001` is findable.
+2. `src/App.tsx` — `/repair-history` route now allows EMPLOYEE and renders `<EmployeeRepairHistory/>` for that role (unchanged for Admin/Manager/Technician); added the import.
+3. `src/components/layout/Sidebar.tsx` — EMPLOYEE nav gains a `{ to: '/repair-history', label: 'Repair History', icon: 'history' }` item (between My Assets and Notifications).
+4. `src/pages/employee/Dashboard.tsx` — `ReportIssueModal` submit: the `created:true` branch now only calls `onCreated()` (which closes the modal / returns to the list) when the returned repair actually persisted (`repair && repair.id && repair.ticket_number`). If it resolves without a persisted ticket, it shows an inline `FormError` and KEEPS the form — no silent navigation back to My Assets. Duplicate (`created:false`) and thrown-error paths already render inline errors and stay (unchanged this entry).
+5. `dist/*` — rebuilt (`npm run build`, EXITCODE=0, 110 modules).
+6. `memory.md` — this appended entry.
+
+### Durable-rule change
+The "employees have exactly five pages / no Repair History" rule is SUPERSEDED: employee Repair History is now a supported, navigable, searchable flow (six sections). Update the Employee Navigation memory accordingly.
+
+### Verification
+- `npm run build` passes (tsc -b && vite build; 110 modules; EXITCODE=0).
+- DB read-back: Jordan reports 86 repairs (RD-1001 present, 2 completed) → Repair History search/filter returns matches; the page is RLS-scoped to their own records.
+
+### Not done / remaining
+1. Source STILL uncommitted on `fix/Employee-Issues` (Entries 11–15 + this). `origin/main` (Vercel production) is behind; `dist/` untracked. The E2E suite hits the deployed app, so none of these fixes are actually live until commit+push+deploy — the persistent root cause of recurring identical failures.
+2. No live browser re-run this session (build + SQL read-back only). The failure-mode in #2 (create resolving without persistence) was not reproducible in current source — the likely real-world trigger is the stale deployed bundle; the new guard is defensive.
+
+### Final status
+CODE changes COMPLETE and BUILD-VERIFIED. Restored a searchable, read-only employee Repair History (nav item + `/repair-history` route rendering the new EmployeeRepairHistory page scoped to the employee's own records), and hardened the report-issue flow so it never silently returns to the asset list when a ticket did not persist (visible inline error, form preserved). No existing page/route removed. Production E2E verification pending commit/push/deploy.
+
 

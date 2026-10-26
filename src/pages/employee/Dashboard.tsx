@@ -381,7 +381,15 @@ export function ReportIssueModal({
         priority,
       })
       if (created) {
-        onCreated()
+        // Only treat this as success — and only then let the parent close/navigate —
+        // if the ticket actually persisted (has a real id + ticket_number). A resolve
+        // without a persisted repair must surface a visible error and KEEP the form,
+        // never silently return to the asset list as if it succeeded.
+        if (repair && repair.id && repair.ticket_number) {
+          onCreated()
+        } else {
+          setError('The repair request could not be saved. No ticket was created — please try again.')
+        }
       } else {
         // Duplicate (same asset + same issue title, still open): show a visible error,
         // keep the form and entered values, and do NOT create a new open ticket.
