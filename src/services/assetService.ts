@@ -86,6 +86,26 @@ export async function fetchAsset(id: string): Promise<Asset | null> {
   return data ? shapeAsset(data) : null
 }
 
+export interface ReportingAssetOption {
+  id: string
+  asset_tag: string
+  name: string
+  status: AssetStatus
+  assignable: boolean
+}
+
+/**
+ * Read-only org-wide catalog for the employee "report an issue" picker. Only assets
+ * assigned to the current user (and not retired) are `assignable`; the rest are shown
+ * so the unauthorized/unavailable selection path can be exercised, but the create RPC
+ * still rejects them (FORBIDDEN / retired). Does not change assets_select RLS.
+ */
+export async function fetchReportingAssetOptions(): Promise<ReportingAssetOption[]> {
+  const { data, error } = await supabase.rpc('reporting_asset_options')
+  if (error) throw error
+  return (data ?? []) as unknown as ReportingAssetOption[]
+}
+
 export async function fetchAssetLocations(): Promise<string[]> {
   const { data, error } = await supabase.from('assets').select('location').not('location', 'is', null)
   if (error) throw error

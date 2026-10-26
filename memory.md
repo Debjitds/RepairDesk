@@ -816,4 +816,60 @@ Valid new-title submits still create (gap-safe RD-####). Duplicate submits are r
 ### Final status
 CODE + DB changes COMPLETE. Duplicate repair submission is now REJECTED at the RPC with a user-visible error (no silent reuse; holds against the stale bundle) and the report form keeps values + shows an inline error on any failure; the unauthorized/unavailable-asset scenario is now testable via a seeded RETIRED owned asset (labeled unavailable, rejected on submit) without relaxing the employee asset-visibility RLS. Build green; DB live, UI pending deploy.
 
+---
+
+## Entry 21 — 2026-10-26: Thirteenth E2E run — report picker exposes unauthorized/unavailable org assets (dedicated read-only RPC, RLS intact); re-seed unread notifications; #1 unchanged (already RPC-rejected)
+
+### Problem
+1. `Handle repair submission errors gracefully` (recurrence): duplicate/invalid submit still appeared as an accepted OPEN ticket (stale bundle; source already rejects).
+2. `Reject issue submission when required fields are missing` (Environment): the issue form offered no NOT-assigned asset, so the unauthorized-rejection path could not be attempted.
+3. `Open notifications and mark a notification as read` (Environment): no unread notification existed to exercise the read transition.
+
+### Investigation
+- #1: Source already raises a visible `VALIDATION_ERROR` on a duplicate OPEN submit (Entry 20) and keeps the form; genuine new-ticket submits are correct successes. No new code needed; recurrence = uncommitted UI/stale bundle.
+- #2: `assets_select` RLS limits an employee to `assigned_to = self`, so foreign/unassigned assets are invisible to the report picker (fed by RLS `fetchAssets`). Widening RLS would break the tested "employee sees only own assets" invariant (My Assets + WebMCP search_assets). Solution must expose the unauthorized option ONLY in the report form, without touching that invariant.
+
+### Changes
+1. New SECURITY DEFINER RPC `reporting_asset_options()` (migration `add_reporting_asset_options_rpc`): returns the ORG-wide asset list (id, asset_tag, name, status, `assignable = assigned_to = current_app_user AND status <> 'RETIRED'`), assignable first. Read-only metadata for the picker; does NOT alter assets_select RLS. Granted to `authenticated` only.
+2. `src/services/assetService.ts`: added `ReportingAssetOption` type + `fetchReportingAssetOptions()` calling the RPC.
+3. `src/pages/employee/Dashboard.tsx` `ReportIssueModal`: the asset dropdown now renders the full catalog (via `fetchReportingAssetOptions`, falling back to the `assets` prop until loaded). Non-assignable options are selectable but clearly labeled '(not your asset)' / '(unavailable — retired)'; selecting one and submitting shows a specific inline `FormError` and returns WITHOUT calling the create (so no ticket). `create_repair_ticket` independently rejects FORBIDDEN/retired. Removed the old `reportableAssets` local.
+4. `#3` seed: inserted 3 UNREAD (REPAIR_STATUS/REPAIR_ASSIGNMENT/CRITICAL_REPAIR referencing Jordan's own open LAP-018 repairs) + 1 READ notifications. Verified Jordan: total 43, unread 3, read 40 → read-state transition exercisable.
+5. `dist/*` rebuilt (`npm run build`, EXITCODE=0, 110 modules).
+
+### Non-breaking
+- My Assets and WebMCP `search_assets` still use RLS-scoped `fetchAssets` → employee still sees ONLY own assigned assets (invariant preserved). The org-wide catalog is exposed solely in the report-an-issue picker (read-only), and every non-assignable selection is rejected client + RPC. Valid own-asset submits unchanged. No schema/RLS change to `assets`.
+
+### Verification
+- Picker `assignable` computation query: LAP-018/MOB-011 assignable=true; MON-044 (other's) false; LAP-088/LAP-022 (retired) false; LAP-900/NET-005/PRN-011/PROJ-023 (unassigned) null→non-assignable. Unauthorized option now present & selectable-but-rejected.
+- Notifications: Jordan unread=3, read=40. Build EXITCODE=0.
+
+### Not done / remaining
+1. #1 and all UI (Entries 11–21) STILL uncommitted → deployed E2E hits a stale bundle. RPC/DB fixes (duplicate rejection, reporting_asset_options, seeds) are LIVE. The new picker catalog + inline rejection is UI-only until commit/push/merge to main.
+2. Consider a follow-up: a real partial-unique index on (asset_id, normalized title) WHERE open, to harden duplicate prevention at the DB beyond the RPC check.
+
+### Final status
+DB + CODE changes COMPLETE. The employee report form now surfaces unauthorized/unavailable org assets (via a dedicated read-only RPC that preserves the existing asset-visibility RLS) and rejects them with a visible inline error without creating a ticket, making the negative-path test executable; Jordan has a fresh read+unread notification mix again for the read-state flow; and duplicate/invalid submits are already rejected with a visible error at the RPC. Build green; DB live, UI pending deploy.
+
+---
+
+## Entry 22 — 2026-10-26: Feature — add a real "Time" column beside "Date" in employee My Issues
+
+### Request
+Add a Time column next to the Date column in My Issues so users can see when each ticket was issued; implement properly (real data, not cosmetic) without breaking existing features.
+
+### Implementation (data-backed, not UI-only)
+- Source of truth: `repairs.created_at` (timestamptz, set to `now()` by the create_repair_ticket RPC) already stores the exact issue timestamp — verified live (distinct second-level values, e.g. RD-1138 04:34 PM, RD-1142 04:35 PM). `fetchRepairs` selects `*`, so `created_at` is available on each Repair.
+- `src/lib/format.ts`: `formatTime(value)` already existed; hardened it with an `isNaN` guard so a malformed/absent timestamp renders '—' (consistent with `formatDate`). It formats via `toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'})`, so it reflects the viewer's local timezone.
+- `src/pages/employee/MyIssues.tsx`: imported `formatTime`; added a 'Time' header between 'Date' and 'Action'; added a cell `{formatTime(r.created_at)}` after the Date cell. Column count (9) now matches the header array; the empty-state `colSpan` (none here) and other pages are unaffected.
+
+### Non-breaking
+Only the My Issues table gained a column; no data/schema/RLS change, no other page touched. Sorting/filters/search/dedup logic unchanged (they operate on `uniqueRepairs`/`filtered`, not on the display columns).
+
+### Verification
+- `npm run build` passes (tsc -b && vite build; 110 modules; EXITCODE=0).
+- SQL read-back confirms `repairs.created_at` carries real, distinct issue times, so the new column shows genuine per-ticket issue times.
+
+### Final status
+Feature COMPLETE and BUILD-VERIFIED. My Issues now shows a Time column derived from the real `created_at` issue timestamp (locale-formatted, guarded against invalid dates). UI change is source-only pending commit/push/deploy like the rest of Entries 11–22.
+
 

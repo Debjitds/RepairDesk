@@ -11,7 +11,7 @@ import {
   StatusBadge,
   NeoButton,
 } from '@/components/ui/primitives'
-import { formatDate } from '@/lib/format'
+import { formatDate, formatTime } from '@/lib/format'
 import type { Asset, Repair, RepairStatus } from '@/types'
 import { fetchAssets } from '@/services/assetService'
 
@@ -187,7 +187,7 @@ export default function EmployeeMyIssues() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-electric-yellow border-b-[3px] border-primary text-black font-label-caps text-label-caps uppercase">
-                    {['Ticket ID', 'Asset', 'Issue', 'Priority', 'Status', 'Technician', 'Date', 'Action'].map((h) => (
+                    {['Ticket ID', 'Asset', 'Issue', 'Priority', 'Status', 'Technician', 'Date', 'Time', 'Action'].map((h) => (
                       <th key={h} className="p-4">
                         {h}
                       </th>
@@ -233,6 +233,7 @@ export default function EmployeeMyIssues() {
                         )}
                       </td>
                       <td className="p-4 font-mono-label text-xs">{formatDate(r.created_at)}</td>
+                      <td className="p-4 font-mono-label text-xs">{formatTime(r.created_at)}</td>
                       <td className="p-4 text-center">
                         <button className="bg-white group-hover:bg-warm-cream group-hover:text-black text-primary px-3 py-1 border-[3px] border-primary font-label-caps text-[11px] uppercase font-bold shadow-brutal-sm">
                           DETAILS

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useAsyncData } from '@/hooks/useAsyncData'
 import { createRepairTicket, fetchRepairs } from '@/services/repairService'
-import { fetchAssets } from '@/services/assetService'
+import { fetchAssets, fetchReportingAssetOptions, type ReportingAssetOption } from '@/services/assetService'
 import { supabase } from '@/lib/supabase'
 import {
   Icon,
@@ -331,11 +331,14 @@ export function ReportIssueModal({
   onClose: () => void
   onCreated: () => void
 }) {
-  // Employees can only report issues on their own NON-retired assets. Excluding
-  // retired assets here prevents an invalid submission that would be rejected by
-  // the backend and (in a stale bundle) could otherwise slip through as an open ticket.
-  const reportableAssets = assets.filter((a) => a.status !== 'RETIRED')
-  const [assetId, setAssetId] = useState(reportableAssets[0]?.id ?? '')
+  // Full org catalog for the picker (read-only); only assets assigned to this
+  // employee (and not retired) are `assignable`. Selecting a non-assignable asset
+  // is rejected inline here and independently by create_repair_ticket (FORBIDDEN).
+  const optionsQ = useAsyncData<ReportingAssetOption[]>(() => fetchReportingAssetOptions(), [])
+  const options: ReportingAssetOption[] = optionsQ.data?.length
+    ? optionsQ.data
+    : assets.map((a) => ({ id: a.id, asset_tag: a.asset_tag, name: a.name, status: a.status, assignable: a.status !== 'RETIRED' }))
+  const [assetId, setAssetId] = useState(options.find((o) => o.assignable)?.id ?? assets[0]?.id ?? '')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [priority, setPriority] = useState<RepairPriority>('MEDIUM')
@@ -350,21 +353,17 @@ export function ReportIssueModal({
     setError(null)
     // Frontend validation — a failed/invalid submission must render an inline error
     // and never transition to an open ticket.
-    if (!assetId) {
+    const selected = options.find((o) => o.id === assetId)
+    if (!assetId || !selected) {
       setError('Select the asset with the problem.')
       return
     }
-    const chosen = assets.find((a) => a.id === assetId)
-    if (!chosen) {
-      setError('Select one of your assigned assets.')
-      return
-    }
-    if (chosen.status === 'RETIRED') {
-      setError('This asset is retired and unavailable for issue reporting. Please choose an active asset.')
-      return
-    }
-    if (!reportableAssets.some((a) => a.id === assetId)) {
-      setError('This asset is not available for issue reporting.')
+    if (!selected.assignable) {
+      setError(
+        selected.status === 'RETIRED'
+          ? 'This asset is retired and unavailable for issue reporting. Please choose an active asset.'
+          : `You can only report issues on assets assigned to you — ${selected.asset_tag} is not assigned to you.`,
+      )
       return
     }
     const cleanTitle = title.trim()
@@ -461,10 +460,10 @@ export function ReportIssueModal({
               <option value="" disabled>
                 Select an asset…
               </option>
-              {assets.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.asset_tag} — {a.name}
-                  {a.status === 'RETIRED' ? ' (unavailable — retired)' : ''}
+              {options.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.asset_tag} — {o.name}
+                  {o.assignable ? '' : o.status === 'RETIRED' ? ' (unavailable — retired)' : ' (not your asset)'}
                 </option>
               ))}
             </select>
