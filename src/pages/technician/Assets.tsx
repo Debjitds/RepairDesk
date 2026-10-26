@@ -31,7 +31,7 @@ export default function TechnicianAssets() {
   const [warranty, setWarranty] = useState('ALL')
   const [location, setLocation] = useState('ALL')
 
-  const filters: AssetFilters = { search: debounced, status, category, location, warranty }
+  const filters: AssetFilters = { search: debounced, status, category, location, warranty, excludeRetired: true }
   const q = useAsyncData<Asset[]>(() => fetchAssets(filters), [debounced, status, category, location, warranty])
   const locsQ = useAsyncData<string[]>(() => fetchAssetLocations(), [])
 
@@ -141,7 +141,6 @@ export default function TechnicianAssets() {
                 <option value="ALL">All Statuses</option>
                 <option value="ACTIVE">Active</option>
                 <option value="IN_REPAIR">In Repair</option>
-                <option value="RETIRED">Retired</option>
               </select>
             </div>
             <div className="md:col-span-2">

@@ -14,7 +14,6 @@ import {
   Field,
   inputCls,
   FormError,
-  FormWarning,
   NeoButton,
 } from '@/components/ui/primitives'
 import { dueLabel, formatRelative, initials } from '@/lib/format'
@@ -332,13 +331,16 @@ export function ReportIssueModal({
   onClose: () => void
   onCreated: () => void
 }) {
-  const [assetId, setAssetId] = useState(assets[0]?.id ?? '')
+  // Employees can only report issues on their own NON-retired assets. Excluding
+  // retired assets here prevents an invalid submission that would be rejected by
+  // the backend and (in a stale bundle) could otherwise slip through as an open ticket.
+  const reportableAssets = assets.filter((a) => a.status !== 'RETIRED')
+  const [assetId, setAssetId] = useState(reportableAssets[0]?.id ?? '')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [priority, setPriority] = useState<RepairPriority>('MEDIUM')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
   const [alreadySubmitted, setAlreadySubmitted] = useState(false)
 
   async function submit(e: React.FormEvent) {
@@ -346,35 +348,46 @@ export function ReportIssueModal({
     // In-flight guard: repeated clicks/enters cannot fire a second request.
     if (busy) return
     setError(null)
-    setNotice(null)
-    if (!assetId) {
-      setError('Select the asset with the problem.')
+    // Frontend validation — a failed/invalid submission must render an inline error
+    // and never transition to an open ticket.
+    if (!assetId || !reportableAssets.some((a) => a.id === assetId)) {
+      setError('Select one of your assigned assets.')
       return
     }
-    if (title.trim().length < 3) {
+    const cleanTitle = title.trim()
+    const cleanDesc = description.trim()
+    if (cleanTitle.length < 3) {
       setError('Describe the issue in the title (at least 3 characters).')
       return
     }
-    if (description.trim().length < 3) {
-      setError('Add a short description of the problem.')
+    if (cleanTitle.length > 200) {
+      setError('Title must be 200 characters or fewer.')
+      return
+    }
+    if (cleanDesc.length < 3) {
+      setError('Add a short description of the problem (at least 3 characters).')
+      return
+    }
+    if (cleanDesc.length > 4000) {
+      setError('Description must be 4000 characters or fewer.')
       return
     }
     setBusy(true)
     try {
       const { repair, created } = await createRepairTicket({
         asset_id: assetId,
-        title: title.trim(),
-        description: description.trim(),
+        title: cleanTitle,
+        description: cleanDesc,
         priority,
       })
       if (created) {
         onCreated()
       } else {
-        // Duplicate (same asset + same issue title, still open): reuse the existing
-        // open ticket, keep form state, and do NOT imply a new ticket was created.
+        // Duplicate (same asset + same issue title, still open): show a visible error,
+        // keep the form and entered values, and do NOT create a new open ticket.
         setAlreadySubmitted(true)
-        setNotice(
-          `Already reported — #${repair.ticket_number} "${repair.title}" is still open for this asset. No duplicate ticket was created. Use a different issue title to report a separate problem.`,
+        setError(
+          `Could not submit — #${repair.ticket_number} "${repair.title}" is already open for this asset. No new ticket was created. Use a different issue title to report a separate problem.`,
         )
       }
     } catch (err) {
@@ -398,7 +411,6 @@ export function ReportIssueModal({
         </div>
         <div className="p-5 space-y-4">
           <FormError message={error} />
-          <FormWarning message={notice} />
           <Field label="Asset with the problem">
             <select
               className={inputCls}
@@ -460,8 +472,8 @@ export function ReportIssueModal({
             Cancel
           </NeoButton>
           <NeoButton type="submit" disabled={busy || alreadySubmitted} title={alreadySubmitted ? 'This issue title already has an open ticket' : undefined}>
-            <Icon name={alreadySubmitted ? 'check_circle' : 'send'} />{' '}
-            {busy ? 'Submitting…' : alreadySubmitted ? 'Already Submitted' : 'Submit Issue'}
+            <Icon name={alreadySubmitted ? 'block' : 'send'} />{' '}
+            {busy ? 'Submitting…' : alreadySubmitted ? 'Blocked · Duplicate' : 'Submit Issue'}
           </NeoButton>
         </div>
       </form>

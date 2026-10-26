@@ -485,4 +485,44 @@ Seeded `related_repair_id` subqueries resolve the newest repair per asset (LAP-0
 ### Final status
 CODE + DB changes COMPLETE and BUILD-VERIFIED. Duplicate detection restored to the title rule (same-title re-submit reuses the open ticket; My Issues collapses same-title open tickets); employee settings no longer expose role/department/organization/Application-ID; notification search matches repair context (LAP-018) and rows mark read in place without clearing the feed; employees have a seeded read+unread notification mix. Production E2E re-verification pending deploy.
 
+---
+
+## Entry 12 — 2026-10-26: Fourth E2E run — notification deep-link to repair, employee repair-history search, hard submission error path, technician operational scope (no retired)
+
+### Problem (fourth automated E2E run — 4 findings)
+1. `Review employee-relevant repair updates from notifications to history`: clicking a REPAIR_STATUS notification (e.g. RD-1044) only marked it read and stayed on Notifications — no repair context/history opened.
+2. `Search employee repair history records`: no employee "Repair History" search — the Asset Detail Repair History section (e.g. LAP-018 → RD-1001) had no search field.
+3. `Handle repair submission errors gracefully`: an invalid submission created an open ticket (RD-1055) instead of showing an inline error and preserving the form.
+4. `TECHNICIAN — asset access is limited to operational context`: the technician assets list showed 7 records including a RETIRED asset, not the operational subset.
+
+### Exact root causes
+1. Entry 11 removed navigation on the notification ROW click (to keep the read transition in place), leaving only the small "Open" strip as the link. The tester clicks the row, so nothing opened. The REPAIR_STATUS notifications already carry `related_repair_id`/`related_asset_id` (verified in the `update_repair_status` RPC), so the data for a deep link exists — the UI just wasn't routing.
+2. The Asset Detail "Repair History" panel rendered all records with no filter control.
+3. Submission failures were partly handled, but there was no client-side validation of upper length bounds or retired/unassigned-asset rejection, and the duplicate path read as a neutral notice. A valid-looking submit therefore created an open ticket.
+4. `TechnicianAssets` called `fetchAssets` with `status:'ALL'` and no retired exclusion; the status dropdown even offered a RETIRED option — so retired assets appeared in an operational (bench) view.
+
+### Files changed
+1. `src/pages/shared/Notifications.tsx` — notification ROW click is now the primary action: it marks the item read AND navigates to the linked repair/asset (`openRelated`) when a related target exists; a notification with no related item only marks read (stays). The dedicated per-row "Mark as Read" button keeps `stopPropagation` (in-place toggle, preserving Entry 11's no-wipe behavior). `aria-label` reflects the action.
+2. `src/pages/shared/AssetDetail.tsx` — added `historySearch` state + a search input in the Repair History panel with a `history` useMemo filtering by ticket_number/title/resolution/diagnosis/technician; the list renders `history`, the header count shows "N of M records" when a term is active, plus a "No matching records" empty state. Gives employees a searchable repair-history surface (RD-1001 etc.).
+3. `src/pages/employee/Dashboard.tsx` — `ReportIssueModal`: computes `reportableAssets` (excludes `status === 'RETIRED'`) for the default selection + dropdown; expanded frontend validation (asset must be an assigned reportable asset; title 3–200; description 3–4000) each surfacing inline `FormError` and RETURNING before any write; the duplicate (`created:false`) branch now calls `setError` (visible red alert) instead of a neutral notice and does not create a ticket; submit button latches to "Blocked · Duplicate". Removed the now-unused `notice` state and `FormWarning` import.
+4. `src/services/assetService.ts` — `AssetFilters` gained `excludeRetired?: boolean`; `fetchAssets` applies `.neq('status','RETIRED')` when set.
+5. `src/pages/technician/Assets.tsx` — passes `excludeRetired: true` (list + KPI now operational-only, 7→6 with the retired LAP-022 hidden) and removed the RETIRED option from the status filter dropdown.
+6. `dist/*` — rebuilt (`npm run build`, EXITCODE=0).
+7. `memory.md` — this appended entry (no prior entries modified/deleted).
+
+### Note: FormWarning now unused
+`FormWarning` (added in Entry 10) is no longer imported anywhere; it remains exported from `primitives.tsx` but unused. Harmless; can be removed if a cleanup pass is desired.
+
+### Verification
+- `npm run build` (`tsc -b && vite build`) passes — 109 modules, EXITCODE=0.
+- DB read-only checks: `update_repair_status` inserts REPAIR_STATUS notifications to `v_repair.reported_by` WITH `related_repair_id`+`related_asset_id` (so the deep link resolves for RD-1044-style alerts); asset status counts = 5 ACTIVE + 1 IN_REPAIR + 1 RETIRED (technician list excludes the 1 retired → 6 operational).
+
+### Not done / remaining
+1. Entry 11 made notification click in-place (no navigate); Entry 12 makes the row navigate AND keeps the button for in-place read. If a future test again asserts "clicking must not navigate," reconcile via the two controls (row = open, Mark-as-Read button = in place).
+2. No live re-run of the 4 scenarios in a browser this session (typecheck + build + SQL read-back only).
+3. All source + dist changes remain uncommitted; Vercel auto-deploy pending commit/push — several fixes across these sessions only reach the deployed app after push, which is a likely reason "already-fixed" symptoms (silent-create, etc.) re-appear to the E2E suite.
+
+### Final status
+CODE changes COMPLETE and BUILD-VERIFIED. Notification rows now deep-link to the related repair while a separate button preserves in-place read; employees get a searchable Repair History panel on Asset Detail; the report-issue flow validates client-side (no retired/unassigned assets, length bounds) and shows a visible inline error without creating a ticket on invalid/duplicate submits; the technician asset directory is limited to operational assets and hides retired records. Production E2E re-verification pending deploy.
+
 
