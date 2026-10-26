@@ -251,13 +251,20 @@ export default function NotificationsPage() {
                   key={n.id}
                   role="button"
                   tabIndex={0}
-                  aria-label={n.is_read ? 'Notification already read' : 'Open and mark this notification as read'}
+                  aria-label={
+                    n.related_repair_id || n.related_asset_id
+                      ? 'Open the related repair and mark as read'
+                      : 'Mark this notification as read'
+                  }
                   onClick={() => {
-                    // Opening a notification marks it read IN PLACE and keeps it on the
-                    // page, so the Unread→Read transition is immediately verifiable and
-                    // the item shows under the Read filter. To view the repair itself,
-                    // use the "Open" strip below (deep link) — it does not wipe the feed.
+                    // A repair-related notification's primary action opens its linked
+                    // repair detail/history (e.g. RD-1066 / LAP-018). We mark it read
+                    // first, then navigate. Notifications with no related target just
+                    // mark read in place. To verify the read state WITHOUT leaving the
+                    // page, use the dedicated "Mark as Read" button below (in place).
+                    const hasTarget = !!(n.related_repair_id || n.related_asset_id)
                     if (!n.is_read) void markOneRead(n.id)
+                    if (hasTarget) openRelated(n)
                   }}
                   className={`p-stack-md transition-colors flex flex-col gap-3 cursor-pointer ${n.is_read ? 'hover:bg-surface-container-highest' : 'bg-surface-container-low/60 hover:bg-surface-container-highest'}`}
                 >

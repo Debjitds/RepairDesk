@@ -569,4 +569,39 @@ The suite drains read notifications via Clear Read each run, so the fixture shou
 ### Final status
 CODE + DB changes COMPLETE and BUILD-VERIFIED. Notification read/clear specs are addressed by reverting the row click to in-place mark-read (verifiable under the Read filter, feed never wiped, deep link retained via the Open strip) and by seeding a resilient read+unread repair-related notification fixture for both employees. Production E2E re-verification requires committing/pushing the pending changes and re-seeding before the notification run.
 
+---
+
+## Entry 14 — 2026-10-26: Sixth E2E run — repair-update notification click must OPEN the linked repair (final reconciliation of the row-click behavior)
+
+### Problem
+`Review employee-relevant repair updates from notifications to history`: clicking the LAP-018 repair-update notification (ticket RD-1066) marked it read but stayed on Notifications; the related repair context/history did not open. Expected: click → open repair detail/history for RD-1066 / LAP-018, marking read first.
+
+### Root cause
+Entry 13 had reverted the notification ROW click to mark-read-IN-PLACE only (removed navigation) to satisfy the PRIOR run's "opened item must stay and appear under Read." That removed the deep-link-on-click that THIS run (and Entry 12's run) requires. The row-click behavior has now flip-flopped across three runs (Entry 12 navigate → Entry 13 in-place → Entry 14 navigate). The two specs are NOT mutually exclusive if we provide TWO controls, so this entry finalizes that design and stops the oscillation.
+
+### Final reconciliation (do not flip again)
+A single "click the row" gesture cannot simultaneously (a) navigate to the repair context and (b) stay on the page to verify the read transition. Resolution — separate the two affordances:
+- NOTIFICATION ROW click = mark read (if unread) AND navigate to the linked repair detail/history (`openRelated`) when the notification carries `related_repair_id`/`related_asset_id`; if there is no related target it only marks read in place. → satisfies "click opens the repair context for RD-1066/LAP-018."
+- Dedicated "Mark as Read" button (stopPropagation, shown only when unread) = mark read IN PLACE without navigating. → satisfies the earlier "verify read state / Read filter without leaving the page" spec.
+- The "Open" strip (Ticket/Asset) also navigates. Read persists server-side via `mark_notifications_read`, so returning to Notifications shows the item under the Read filter (and unread count updates). No feature broken; search-by-repair-context, read/clear, and navigation all work together.
+
+### Files changed
+1. `src/pages/shared/Notifications.tsx` — row `onClick` now does `if (!n.is_read) void markOneRead(n.id); if (hasTarget) openRelated(n);` (restores navigation for repair/asset notifications) with an updated `aria-label` and comment; the in-place "Mark as Read" button and "Open" strip are retained unchanged.
+2. `dist/*` — rebuilt (`npm run build`, EXITCODE=0).
+3. `memory.md` — this appended entry (no prior entries modified/deleted).
+
+### Data state verified (live)
+Jordan's inbox already contains the click-through targets: REPAIR_STATUS "Repair for LAP-018 is now IN_REPAIR", CRITICAL_REPAIR, and "Technician assigned to your LAP-018 repair" all have `related_repair_id` → ticket RD-1066 (LAP-018); plus unread REPAIR_ASSIGNMENT rows (RD-1053) exist for the mark-as-read flow; all reference a repair so deep links resolve. (The Entry 13 seeded rows were marked read by the suite run, which is expected.) No re-seed was required for this fix — it is UI-only.
+
+### Verification
+- `npm run build` (`tsc -b && vite build`) passes — 109 modules, EXITCODE=0.
+- DB read-back confirms repair-update notifications for RD-1066/LAP-018 carry valid `related_repair_id` so the row click routes to `/repairs/:id` (RepairDetail shows the context/history).
+
+### Remaining
+1. Source still UNCOMMITTED on `fix/Employee-Issues`; `origin/main` (Vercel production) behind; `dist/` untracked → fixes only reach the deployed app after commit/push + deploy. Recommend committing this + Entries 11–13 together and re-running the suite.
+2. No live browser click-through test this session (build + SQL read-back only).
+
+### Final status
+UI change COMPLETE and BUILD-VERIFIED. Repair-related notification rows now mark read and open their linked repair detail/history (RD-1066/LAP-018), while the explicit "Mark as Read" button preserves in-place read verification — reconciling the conflicting notification specs without regressing other flows. Production verification pending commit/push/deploy.
+
 
