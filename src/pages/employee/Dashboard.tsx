@@ -372,6 +372,15 @@ export function ReportIssueModal({
       setError('Description must be 4000 characters or fewer.')
       return
     }
+    // Priority is a controlled select (only LOW/MEDIUM/HIGH/CRITICAL), so a normal UI
+    // interaction cannot produce an invalid value. Guard defensively anyway: a
+    // malformed/unexpected priority surfaces a visible in-app error instead of being
+    // silently sent to the backend.
+    const VALID_PRIORITIES: RepairPriority[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
+    if (!VALID_PRIORITIES.includes(priority)) {
+      setError('Choose a valid priority.')
+      return
+    }
     setBusy(true)
     try {
       const { repair, created } = await createRepairTicket({
@@ -382,13 +391,20 @@ export function ReportIssueModal({
       })
       if (created) {
         // Only treat this as success — and only then let the parent close/navigate —
-        // if the ticket actually persisted (has a real id + ticket_number). A resolve
-        // without a persisted repair must surface a visible error and KEEP the form,
-        // never silently return to the asset list as if it succeeded.
-        if (repair && repair.id && repair.ticket_number) {
+        // if the backend actually FINALIZED a proper open ticket: a persisted row with
+        // a real id/ticket_number, status OPEN, and for the asset we submitted. Any
+        // other outcome is a failed submission that must surface a visible error and
+        // KEEP the form, never leave the user with a successful-looking open-ticket state.
+        const finalized =
+          !!repair &&
+          !!repair.id &&
+          !!repair.ticket_number &&
+          repair.status === 'OPEN' &&
+          repair.asset_id === assetId
+        if (finalized) {
           onCreated()
         } else {
-          setError('The repair request could not be saved. No ticket was created — please try again.')
+          setError('The repair request could not be finalized. No confirmed open ticket was created — please try again.')
         }
       } else {
         // Duplicate (same asset + same issue title, still open): show a visible error,

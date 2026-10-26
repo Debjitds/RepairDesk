@@ -637,4 +637,36 @@ The "employees have exactly five pages / no Repair History" rule is SUPERSEDED: 
 ### Final status
 CODE changes COMPLETE and BUILD-VERIFIED. Restored a searchable, read-only employee Repair History (nav item + `/repair-history` route rendering the new EmployeeRepairHistory page scoped to the employee's own records), and hardened the report-issue flow so it never silently returns to the asset list when a ticket did not persist (visible inline error, form preserved). No existing page/route removed. Production E2E verification pending commit/push/deploy.
 
+---
+
+## Entry 16 — 2026-10-26: Eighth E2E run — repair-submission failure surfaces a visible error (finalize check) + defensive priority validation
+
+### Problem (eighth automated E2E run — 2 findings)
+1. `Handle repair submission errors gracefully`: "The repair request was recorded as an open ticket instead of showing a submission error." Expected a visible error when the backend rejects / cannot finalize; no successful-looking open-ticket state on failure.
+2. `Validate required fields and invalid repair submission`: blank fields correctly blocked (native "Please fill out this field", form stayed open = PASS); the invalid-PRIORITY check could not run because Priority is a select with only valid options (labeled Test assumption wrong).
+
+### Investigation (live source review)
+- The source ALREADY handles backend rejections: `submit()` wraps `createRepairTicket` in try/catch → an RPC throw renders inline `FormError` and keeps the form; duplicates (`created:false`) render a visible error and create no ticket; a resolve without a persisted row already errored (Entry 15). The `create_repair_ticket` RPC is a single SECURITY DEFINER function, i.e. transactional — it either commits (returns the OPEN repair row) or raises (no ticket). So "recorded as open instead of error" is NOT reproducible against current source; it reflects the stale deployed bundle (uncommitted). This entry is defensive hardening.
+
+### Files changed
+1. `src/pages/employee/Dashboard.tsx` — `ReportIssueModal.submit()`:
+   - Success now requires a FINALIZED open ticket: `repair && repair.id && repair.ticket_number && repair.status === 'OPEN' && repair.asset_id === assetId`. Only then `onCreated()`; otherwise inline `FormError` ('The repair request could not be finalized...') and KEEP the form — never a successful-looking open-ticket state on an incomplete result.
+   - Defensive Priority guard: `VALID_PRIORITIES = ['LOW','MEDIUM','HIGH','CRITICAL']`; an unexpected/malformed priority (reachable only programmatically since the select offers only valid options) renders a visible 'Choose a valid priority.' error instead of silently hitting the backend.
+2. `dist/*` — rebuilt (`npm run build`, EXITCODE=0, 110 modules).
+3. `memory.md` — this appended entry (no prior entries modified/deleted).
+
+### Why #2 needs no UI change for the blank-field path
+Native `required` still yields the browser "Please fill out this field" for empty inputs (that assertion PASSED); deliberately NOT switching to `noValidate` to avoid regressing that passing check. A whitespace-only / <3-char title falls through native required and already shows the APP `FormError`, so a reachable app-level validation error exists. The invalid-PRIORITY assertion is by-design impossible via the select → the test should drop/adjust it (matches the finding's own 'Test assumption wrong' note).
+
+### Verification
+- `npm run build` passes (tsc -b && vite build; 110 modules; EXITCODE=0).
+- Spot-checks untouched: `Mark employee notification as read` (Entry 14 dual-control design unchanged), `Employee creates repair ticket for assigned asset` (valid creates still finalize → close), asset/notification routes unchanged.
+
+### Not done / remaining
+1. STILL uncommitted on `fix/Employee-Issues` (Entries 11–16). `origin/main` (Vercel) behind; `dist/` untracked. The E2E suite hits the deployed app, so #1 is the stale bundle, not current source. These guards take effect only after commit+push+deploy.
+2. No live browser re-run this session (build only).
+
+### Final status
+CODE changes COMPLETE and BUILD-VERIFIED. The report-issue flow now shows success only when the backend finalized a real OPEN ticket for the submitted asset (otherwise a visible inline error keeps the form), plus a defensive invalid-priority error path. No existing behavior regressed. Production verification requires committing/pushing/deploying the accumulated changes.
+
 
