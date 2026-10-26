@@ -990,4 +990,32 @@ Each create consumes an asset's eligibility. Pre-suite reset (idempotent) keeps 
 ### Final status
 DATA + CODE changes COMPLETE. Completed repairs now all carry a resolution (backfilled) so the Repair History list and record detail show it; Jordan's assets are reset and additional clean ticket-free assets seeded; and the report picker now defaults to (and orders) eligible, ticket-free assets first, labeling ones that already have an open ticket — so the creation/duplicate E2E flows have an eligible asset while one-open-per-asset still blocks genuine duplicates. Build green; DB live, UI pending deploy.
 
+---
+
+## Entry 27 — 2026-10-27: Sixteenth E2E run — root-caused the reset strategy (CLOSE corrupted open-state); switched to a clean DELETE-based fixture reset + committed a reusable reset script
+
+### Problem (5 findings)
+1. `Employee sees persisted repair ticket details after reopening My Issues`: RD-1167 showed CLOSED, expected OPEN.
+2-4. `Reject duplicate repair submission` / `Handle duplicate ticket submission attempts` / `Validate required fields before submitting a repair ticket`: blocked because the selected asset already had an open ticket (LAP-052 had RD-1171, etc.).
+5. `Handle repair submission errors gracefully`: RD-1173 created for LAP-053, no error — the test itself labels this 'Test assumption wrong' (a valid submit legitimately creates a ticket).
+
+### Root cause of the recurring churn (important)
+My earlier resets used `UPDATE ... SET status='CLOSED'` on ALL of Jordan's open tickets (Entries 25/26). That is what turned the suite's own freshly-created tickets into CLOSED (→ finding #1) AND left 150+ CLOSED-without-resolution QA rows cluttering history. Closing was the wrong reset primitive. The saturation (#2-4) is the inherent cost of the one-open-per-asset rule (Entry 24) with a non-isolated, repeatedly-run suite.
+
+### Fix
+1. Clean DELETE reset (live SQL): deleted Jordan's repairs EXCEPT the two legit demo completed tickets (RD-1001 LAP-018, RD-1004 MOB-011, both with resolution). Result: Jordan repairs=2 (0 open, 2 with resolution) → every assigned asset is eligible, and no stray CLOSED artifacts remain to confuse open-state assertions. (Chose DELETE over CLOSE precisely so a re-run's created ticket stays OPEN.)
+2. Re-seeded Jordan's notifications (delete + insert): 3 UNREAD (REPAIR_STATUS/REPAIR_ASSIGNMENT/CRITICAL_REPAIR referencing RD-1001/LAP-018) + 1 READ (REPAIR_RESOLVED RD-1004/MOB-011), asset-consistent. Verified unread=3, read=3.
+3. Seeded clean spare assets LAP-050..053 (ACTIVE, assigned, ticket-free). Verified eligible_assets=6.
+4. NEW committed script `scripts/reset-e2e-fixtures.sql` — idempotent reset (ensure clean assets → delete Jordan's non-demo repairs → ensure resolution → re-seed notification mix). Run BEFORE the E2E suite to guarantee a deterministic, unblocked fixture every time. This replaces the ad-hoc close-all approach that caused finding #1.
+5. #5: no change — a valid submission of a unique issue on a clean asset correctly creates an OPEN ticket; the app already rejects the real failure cases (duplicate same asset while open → RPC raise + inline error; invalid/retired/unauthorized). The suite's 'expected error' for a valid submit is a test-assumption issue (as its own note says).
+
+### Non-breaking
+No source/schema/RLS change. The one-open-per-asset rule and all prior fixes remain. The reset only removes the employee's accumulated QA test data (not other users/roles) and re-adds fixtures. Repair History still shows RD-1001/RD-1004 with resolution.
+
+### Verification
+- SQL: Jordan repairs=2 (open=0, with_resolution=2); notifications unread=3/read=3; eligible active ticket-free assigned assets=6.
+
+### Final status
+ENVIRONMENT reset COMPLETE (via DELETE, not CLOSE) and a reusable `scripts/reset-e2e-fixtures.sql` added. Jordan's assets are eligible for fresh creation, no wrongly-CLOSED tickets remain (fixes the open-state finding), resolutions are present for completed records, and a read+unread notification mix exists. The creation/duplicate E2E flows can now run deterministically provided the harness executes the reset script before each suite. Data/script changes; no UI code modified this entry.
+
 
