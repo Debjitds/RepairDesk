@@ -92,6 +92,7 @@ export interface ReportingAssetOption {
   name: string
   status: AssetStatus
   assignable: boolean
+  has_open_repair: boolean
 }
 
 /**

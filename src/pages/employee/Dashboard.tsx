@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useAsyncData } from '@/hooks/useAsyncData'
@@ -337,8 +337,20 @@ export function ReportIssueModal({
   const optionsQ = useAsyncData<ReportingAssetOption[]>(() => fetchReportingAssetOptions(), [])
   const options: ReportingAssetOption[] = optionsQ.data?.length
     ? optionsQ.data
-    : assets.map((a) => ({ id: a.id, asset_tag: a.asset_tag, name: a.name, status: a.status, assignable: a.status !== 'RETIRED' }))
-  const [assetId, setAssetId] = useState(options.find((o) => o.assignable)?.id ?? assets[0]?.id ?? '')
+    : assets.map((a) => ({ id: a.id, asset_tag: a.asset_tag, name: a.name, status: a.status, assignable: a.status !== 'RETIRED', has_open_repair: false }))
+  const firstEligible = (options.find((o) => o.assignable && !o.has_open_repair) ?? options.find((o) => o.assignable))?.id ?? assets[0]?.id ?? ''
+  const [assetId, setAssetId] = useState(firstEligible)
+  const eligibleBlocked = (o?: ReportingAssetOption) => !o || !o.assignable || o.has_open_repair
+
+  // Once the org catalog loads, default to an assignable asset that has NO open
+  // ticket (the RPC orders eligible assets first), so the create flow is not
+  // pre-blocked by an asset that already has an open repair.
+  useEffect(() => {
+    if (!optionsQ.data) return
+    const current = options.find((o) => o.id === assetId)
+    if (eligibleBlocked(current)) setAssetId(firstEligible)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [optionsQ.data])
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [priority, setPriority] = useState<RepairPriority>('MEDIUM')
@@ -463,7 +475,13 @@ export function ReportIssueModal({
               {options.map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.asset_tag} — {o.name}
-                  {o.assignable ? '' : o.status === 'RETIRED' ? ' (unavailable — retired)' : ' (not your asset)'}
+                  {o.assignable
+                    ? o.has_open_repair
+                      ? ' (has an open ticket)'
+                      : ''
+                    : o.status === 'RETIRED'
+                      ? ' (unavailable — retired)'
+                      : ' (not your asset)'}
                 </option>
               ))}
             </select>

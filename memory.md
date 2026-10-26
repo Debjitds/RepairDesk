@@ -959,4 +959,35 @@ Each successful create consumes one asset's eligibility (it now has an open tick
 ### Final status
 ENVIRONMENT reset COMPLETE and verified. Jordan's assets are no longer saturated and two clean ticket-free assigned assets were seeded, so the repair-creation and duplicate-rejection E2E flows now have an eligible asset for the first submission and still exercise the one-open-per-asset rejection on the second. Data-only change (live); no code modified.
 
+---
+
+## Entry 26 — 2026-10-27: Fifteenth E2E run — backfill missing repair resolutions (#1) + picker defaults to a ticket-free asset and more clean fixtures (#2)
+
+### Problem
+1. `Review repeated failure indicators`: Repair History Resolution column showed '—' for completed records and RD-1157 detail had no resolution notes. Expected completed records to display resolution.
+2. Blocked ticket-creation flows: every selectable assigned asset already had an open ticket (LAP-018/LAP-050/LAP-051/MOB-011), LAP-088 retired → no eligible asset for a fresh create.
+
+### Root causes
+1. NOT a render bug — RepairHistory list uses `r.resolution ?? r.diagnosis ?? '—'` and RepairDetail renders `repair.resolution` (both correct). The DATA was missing: of 154 completed repairs only 2 had a resolution; 152 (mostly the Entry-25 bulk-CLOSED QA tickets) had neither resolution nor diagnosis. The bulk close set status=CLOSED without a resolution.
+2. Recurrence of the one-open-per-asset trade-off: the prior run consumed the clean assets (LAP-050 now open), re-saturating Jordan's assets.
+
+### Fixes
+1. Data (live SQL): closed Jordan's remaining open tickets, then backfilled resolution for ALL completed repairs lacking resolution+diagnosis → `resolution='Resolved — repair completed and verified.'`. Verified: 0 completed repairs without a resolution now. (Rendering already displays it in list + detail.)
+2. Data: seeded two more clean ACTIVE ticket-free assigned assets `LAP-052`, `LAP-053` (ON CONFLICT DO NOTHING). Jordan open = 0; eligible assets: LAP-018/050/051/052/053 + MOB-011.
+3. Code (robustness so the picker isn't pre-blocked): RPC `reporting_asset_options()` (dropped+recreated to change return type) now also returns `has_open_repair` and ORDERs by `assignable DESC, has_open_repair ASC, asset_tag` so eligible (ticket-free) assets come first. `src/services/assetService.ts` `ReportingAssetOption` gained `has_open_repair`. `src/pages/employee/Dashboard.tsx` `ReportIssueModal`: default selection prefers an assignable asset with NO open ticket (and a `useEffect` re-points to the first eligible once the catalog loads); dropdown labels assets that already have an open ticket '(has an open ticket)'.
+
+### Non-breaking
+Rendering paths unchanged (they already showed resolution when present). Backfill only fills empty resolution/diagnosis on completed rows; the 2 real resolutions untouched. Picker still lists the full catalog and still rejects non-assignable/retired; the new default just avoids pre-selecting a saturated asset. One-open-per-asset enforcement unchanged.
+
+### Verification
+- SQL: completed repairs without resolution = 0; Jordan open tickets = 0; eligible assets include LAP-052/053.
+- `npm run build` passes (tsc -b && vite build; 110 modules; EXITCODE=0).
+
+### Re-runnability (still applies)
+Each create consumes an asset's eligibility. Pre-suite reset (idempotent) keeps creation flows green:
+`UPDATE repairs SET status='CLOSED', closed_at=COALESCE(closed_at,now()), resolved_at=COALESCE(resolved_at,now()), resolution=COALESCE(nullif(btrim(resolution),''),'Resolved — repair completed and verified.') WHERE reported_by='2fcf0e4a-d2aa-47ad-9a77-27babcb162e9' AND status NOT IN ('RESOLVED','CLOSED');`
+
+### Final status
+DATA + CODE changes COMPLETE. Completed repairs now all carry a resolution (backfilled) so the Repair History list and record detail show it; Jordan's assets are reset and additional clean ticket-free assets seeded; and the report picker now defaults to (and orders) eligible, ticket-free assets first, labeling ones that already have an open ticket — so the creation/duplicate E2E flows have an eligible asset while one-open-per-asset still blocks genuine duplicates. Build green; DB live, UI pending deploy.
+
 
