@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useAsyncData } from '@/hooks/useAsyncData'
@@ -40,7 +40,19 @@ export default function NotificationsPage() {
   const [search, setSearch] = useState('')
   const [actionError, setActionError] = useState<string | null>(null)
 
-  const q = useAsyncData<Notification[]>(() => fetchNotifications(), [])
+  // Ids we have confirmed written as read this session. `fetchNotifications` is a
+  // plain read that can briefly return a pre-write snapshot (read-replica lag), so a
+  // post-write refresh would flip just-read items back to unread. The loader re-applies
+  // these ids so a refresh always reflects confirmed reads.
+  const readIdsRef = useRef<Set<string>>(new Set())
+
+  const q = useAsyncData<Notification[]>(
+    () => fetchNotifications().then((rows) => {
+      const confirmed = readIdsRef.current
+      return confirmed.size ? rows.map((r) => (confirmed.has(r.id) ? { ...r, is_read: true } : r)) : rows
+    }),
+    [],
+  )
   const notifications = q.data ?? []
 
   const filtered = useMemo(() => {
@@ -82,6 +94,7 @@ export default function NotificationsPage() {
     try {
       // Optimistically flip local state so the read transition is visible immediately
       // (and stays in the All/Read inbox) even before the refetch settles.
+      notifications.forEach((n) => readIdsRef.current.add(n.id))
       q.setData((prev) => (prev ?? []).map((n) => ({ ...n, is_read: true })))
       await markNotificationsRead(null)
       q.refresh()
@@ -94,6 +107,7 @@ export default function NotificationsPage() {
   async function markOneRead(id: string) {
     setActionError(null)
     try {
+      readIdsRef.current.add(id)
       q.setData((prev) => (prev ?? []).map((n) => (n.id === id ? { ...n, is_read: true } : n)))
       await markNotificationsRead([id])
       q.refresh()

@@ -669,4 +669,38 @@ Native `required` still yields the browser "Please fill out this field" for empt
 ### Final status
 CODE changes COMPLETE and BUILD-VERIFIED. The report-issue flow now shows success only when the backend finalized a real OPEN ticket for the submitted asset (otherwise a visible inline error keeps the form), plus a defensive invalid-priority error path. No existing behavior regressed. Production verification requires committing/pushing/deploying the accumulated changes.
 
+---
+
+## Entry 17 — 2026-10-26: Ninth E2E run — fix mark-as-read revert caused by post-write refetch (read-replica lag); re-confirm submission failure handling
+
+### Problem (ninth automated E2E run — 2 findings)
+1. `Open notifications and mark a notification as read`: "The 'Technician assigned to RD-1053' notification remained unread after the mark-as-read action." Expected the item + Unread badge to flip to read.
+2. `Handle repair submission errors gracefully`: "The repair request submission did not show a user-visible error or keep the form open. The page returned to My Assets instead." (recurrence).
+
+### Root cause — #1 is a REAL code bug (not only stale bundle)
+`markOneRead`/`markAllRead` optimistically set `is_read=true`, awaited the `mark_notifications_read` RPC, then called `q.refresh()`. The refresh runs `fetchNotifications()` — a plain `notifications` SELECT that can return a pre-write snapshot (Postgres read-replica / visibility lag right after the write). That refetch overwrote the optimistic state with `is_read=false`, so the item visibly "remained unread." The success path's unconditional refetch was the defect.
+
+### Fix — #1
+`src/pages/shared/Notifications.tsx`: added a `readIdsRef = useRef<Set<string>>` of ids confirmed written as read this session. `markOneRead`/`markAllRead` add id(s) to the set BEFORE the optimistic update + refresh. The page's data loader now re-applies `is_read=true` for any id in `readIdsRef` after each fetch, so a lagging refetch can never revert a confirmed read while still pulling fresh data. Refetch is kept (per the suggested "refetch or optimistically update"); the merge makes it safe.
+
+### Finding — #2
+Re-verified current `ReportIssueModal.submit()`: every non-success path (validation, thrown RPC error, duplicate `created:false`, and the Entry 16 finalize check requiring a persisted OPEN ticket for the submitted asset) calls `setError(...)` and returns WITHOUT calling `onCreated()`; the modal stays mounted with an inline `FormError`. Only a finalized successful create closes (returns to the list). So "failure that returned to My Assets" is not reproducible against current source — it is the stale deployed bundle (see below). No code change made for #2 (avoid regressing the passing `Employee creates repair ticket` flow); the Entry 16 finalize check already hardens the ambiguous case.
+
+### Files changed
+1. `src/pages/shared/Notifications.tsx` — readIdsRef + merged loader + id tracking in markOneRead/markAllRead (bug fix for #1).
+2. `dist/*` — rebuilt (`npm run build`, EXITCODE=0, 110 modules).
+3. `memory.md` — this appended entry (no prior entries modified/deleted).
+
+### Verification
+- `npm run build` (`tsc -b && vite build`) passes — 110 modules, EXITCODE=0.
+- Behavior reasoning: after mark-as-read, optimistic flips immediately; the post-RPC refresh merges `readIdsRef`, so even a stale read shows read → Unread badge/label stay consistent. Error path still refreshes (legitimately reverts an unconfirmed write).
+- No live browser re-run this session (build only). Recommend verifying `Open notifications and mark a notification as read` + `Mark employee notification as read` in a browser on the DEPLOYED app after push.
+
+### Not done / remaining
+1. UNCOMMITTED on `fix/Employee-Issues` (Entries 11–17). `origin/main` (Vercel) behind; `dist/` untracked. #2 (and much of #1's re-reporting) is the E2E suite hitting the stale deployed bundle — none of these fixes are live until commit+push+deploy. This is now the dominant, repeated blocker across 8+ runs.
+2. The read-replica-lag fix (#1) is defensive and correct in source; a full end-to-end browser confirmation should be done post-deploy.
+
+### Final status
+CODE change COMPLETE and BUILD-VERIFIED. Fixed a genuine mark-as-read bug where a post-write refetch could revert just-read notifications back to unread (confirmed-read ids are now re-applied in the loader). Re-confirmed the repair-submission failure paths already keep the form open with an inline error and never silently navigate on failure; no change made there to avoid regressing the create flow. Production verification pending commit/push/deploy.
+
 
