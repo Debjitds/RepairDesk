@@ -370,12 +370,11 @@ export function ReportIssueModal({
       if (created) {
         onCreated()
       } else {
-        // True duplicate (same asset + same title + same description, still open):
-        // surface the exact matching ticket, keep form state, and do NOT imply a new
-        // ticket was created.
+        // Duplicate (same asset + same issue title, still open): reuse the existing
+        // open ticket, keep form state, and do NOT imply a new ticket was created.
         setAlreadySubmitted(true)
         setNotice(
-          `Duplicate prevented — this exact issue is already open as #${repair.ticket_number} "${repair.title}". No new ticket was created. Edit the title or description to report a different problem.`,
+          `Already reported — #${repair.ticket_number} "${repair.title}" is still open for this asset. No duplicate ticket was created. Use a different issue title to report a separate problem.`,
         )
       }
     } catch (err) {
@@ -460,7 +459,7 @@ export function ReportIssueModal({
           <NeoButton tone="surface" onClick={onClose} type="button">
             Cancel
           </NeoButton>
-          <NeoButton type="submit" disabled={busy || alreadySubmitted} title={alreadySubmitted ? 'This issue already has an open ticket' : undefined}>
+          <NeoButton type="submit" disabled={busy || alreadySubmitted} title={alreadySubmitted ? 'This issue title already has an open ticket' : undefined}>
             <Icon name={alreadySubmitted ? 'check_circle' : 'send'} />{' '}
             {busy ? 'Submitting…' : alreadySubmitted ? 'Already Submitted' : 'Submit Issue'}
           </NeoButton>

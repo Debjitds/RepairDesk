@@ -106,23 +106,23 @@ function normalizeTicketText(text: string): string {
 }
 
 /**
- * In-flight create calls keyed by asset + normalized title + normalized description.
- * Simultaneous submissions of the exact same request (double-click, agent retry,
+ * In-flight create calls keyed by asset + normalized title.
+ * Simultaneous submissions of the same request (double-click, agent retry,
  * e2e repeat) share one network call instead of racing two inserts.
  */
 const createTicketInFlight = new Map<string, Promise<{ repair: Repair; created: boolean }>>()
 
 /**
  * Create a repair ticket idempotently.
- * Business rule: an identical report (same asset + same title AND same description)
- * is a true duplicate only while a matching ticket is still open. If one exists,
- * it is returned with `created: false` instead of inserting a second ticket. Any
- * other submission — a different title, or the same title describing a different
- * problem (different description), or a report whose prior ticket is already
- * RESOLVED/CLOSED — is a legitimate new issue and creates a new ticket. Final
- * validation still runs in the SECURITY DEFINER RPC; this guard prevents duplicate
- * *operations*, matching the reliability rules (PRD "Prevent duplicate or
- * conflicting operations", TRD "Duplicate ticket creation caused by repeated requests").
+ * Business rule (PRD "Prevent duplicate or conflicting operations", TRD "Duplicate
+ * ticket creation caused by repeated requests"): an report is a DUPLICATE when the
+ * same asset already has an OPEN ticket with the same normalized title. The title is
+ * the issue identifier users see, so re-submitting the same issue title — even with
+ * slightly different description wording — reuses the existing open ticket (returned
+ * with `created:false`) instead of opening a second one. Once the prior ticket is
+ * RESOLVED/CLOSED, the same title is a legitimate recurring-issue report and a new
+ * ticket is created. Final validation still runs in the SECURITY DEFINER RPC; this
+ * guard prevents duplicate *operations*.
  */
 export async function createRepairTicket(input: {
   asset_id: string
@@ -132,15 +132,14 @@ export async function createRepairTicket(input: {
   due_date?: string | null
 }): Promise<{ repair: Repair; created: boolean }> {
   const wantedTitle = normalizeTicketText(input.title)
-  const wantedDescription = normalizeTicketText(input.description)
-  const flightKey = `${input.asset_id}|${wantedTitle}|${wantedDescription}`
+  const flightKey = `${input.asset_id}|${wantedTitle}`
   const pending = createTicketInFlight.get(flightKey)
   if (pending) return pending
 
   const attempt = (async (): Promise<{ repair: Repair; created: boolean }> => {
-    // Duplicate detection: existing open ticket for this asset reporting the exact
-    // same issue (same title AND same description). Title alone is not enough — two
-    // different faults can share a short title, and those must stay separate tickets.
+    // Duplicate detection: an existing OPEN ticket for this asset with the same
+    // normalized title. Repeat submissions reuse it instead of opening a second
+    // open ticket with the same issue title.
     const { data: openRows, error: openError } = await supabase
       .from('repairs')
       .select(REPAIR_SELECT)
@@ -149,9 +148,7 @@ export async function createRepairTicket(input: {
       .order('created_at', { ascending: false })
       .limit(100)
     if (!openError && openRows) {
-      const existing = (openRows as unknown as Repair[]).find(
-        (r) => normalizeTicketText(r.title) === wantedTitle && normalizeTicketText(r.description ?? '') === wantedDescription,
-      )
+      const existing = (openRows as unknown as Repair[]).find((r) => normalizeTicketText(r.title) === wantedTitle)
       if (existing) return { repair: existing, created: false }
     }
 

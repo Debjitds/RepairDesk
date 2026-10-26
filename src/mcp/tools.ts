@@ -280,7 +280,7 @@ export const TOOLS: McpTool[] = [
   {
     name: 'create_repair_ticket',
     description:
-      'Report a new repair ticket (status OPEN). Only EMPLOYEE users may create repair tickets, and only for assets assigned to them. ADMIN/MANAGER manage and assign repairs; TECHNICIANs work on assigned repairs. Idempotent: repeating the exact same report (same asset + same title AND same description) while a matching ticket is still open returns the existing ticket instead of creating a duplicate. A different description means a different issue and a new ticket is created.',
+      'Report a new repair ticket (status OPEN). Only EMPLOYEE users may create repair tickets, and only for assets assigned to them. ADMIN/MANAGER manage and assign repairs; TECHNICIANs work on assigned repairs. Idempotent: re-reporting the same issue (same asset + same title) while a matching ticket is still open returns the existing ticket instead of creating a duplicate. Once the prior ticket is RESOLVED/CLOSED the same title is a legitimate recurring issue and a new ticket is created.',
     roles: ['EMPLOYEE'],
     inputSchema: {
       type: 'object',
@@ -307,7 +307,7 @@ export const TOOLS: McpTool[] = [
         status: repair.status,
         message: created
           ? `Ticket ${repair.ticket_number} created for ${asset.asset_tag} (OPEN).`
-          : `Duplicate prevented: ${asset.asset_tag} already has open ticket ${repair.ticket_number} reporting this exact issue (same title and description). No new ticket was created.`,
+          : `Duplicate prevented: ${asset.asset_tag} already has open ticket ${repair.ticket_number} with this issue title. No new ticket was created.`,
       }
     },
   },

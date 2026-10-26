@@ -43,23 +43,30 @@ export default function NotificationsPage() {
   const q = useAsyncData<Notification[]>(() => fetchNotifications(), [])
   const notifications = q.data ?? []
 
-  const filtered = useMemo(
-    () =>
-      notifications.filter(
-        (n) =>
-          (filter === 'ALL' || (filter === 'UNREAD' ? !n.is_read : n.is_read)) &&
-          (typeFilter === 'ALL' ||
-            (typeFilter === 'REPAIRS'
-              ? n.type.startsWith('REPAIR') || n.type === 'CRITICAL_REPAIR'
-              : typeFilter === 'ASSETS'
-                ? n.type === 'ASSET_UPDATE' || n.type === 'WARRANTY_WARNING'
-                : n.type === 'SYSTEM_NOTICE' || n.type === 'DEADLINE_REMINDER')) &&
-          (!search ||
-            n.title.toLowerCase().includes(search.toLowerCase()) ||
-            n.message.toLowerCase().includes(search.toLowerCase())),
-      ),
-    [notifications, filter, typeFilter, search],
-  )
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    return notifications.filter(
+      (n) =>
+        (filter === 'ALL' || (filter === 'UNREAD' ? !n.is_read : n.is_read)) &&
+        (typeFilter === 'ALL' ||
+          (typeFilter === 'REPAIRS'
+            ? n.type.startsWith('REPAIR') || n.type === 'CRITICAL_REPAIR'
+            : typeFilter === 'ASSETS'
+              ? n.type === 'ASSET_UPDATE' || n.type === 'WARRANTY_WARNING'
+              : n.type === 'SYSTEM_NOTICE' || n.type === 'DEADLINE_REMINDER')) &&
+        // Search must match the alert's context, not just its prose — a known
+        // repair context like "LAP-018" or a ticket number has to return the
+        // related alerts rather than clearing the list.
+        (!term ||
+          n.title.toLowerCase().includes(term) ||
+          n.message.toLowerCase().includes(term) ||
+          n.type.toLowerCase().includes(term) ||
+          (n.related_asset?.asset_tag ?? '').toLowerCase().includes(term) ||
+          (n.related_asset?.name ?? '').toLowerCase().includes(term) ||
+          (n.related_repair?.ticket_number ?? '').toLowerCase().includes(term) ||
+          (n.related_repair?.title ?? '').toLowerCase().includes(term)),
+    )
+  }, [notifications, filter, typeFilter, search])
 
   const kpi = useMemo(() => {
     const unread = notifications.filter((n) => !n.is_read).length
@@ -224,8 +231,16 @@ export default function NotificationsPage() {
             <div className="p-stack-md">
               <EmptyState
                 icon="notifications_off"
-                title="No notifications"
-                hint={filter === 'UNREAD' ? 'You are all caught up.' : 'Notifications will appear here as events occur.'}
+                title={search.trim() ? 'No matching notifications' : 'No notifications'}
+                hint={
+                  search.trim()
+                    ? `Nothing matches “${search.trim()}”. Try a ticket number, asset tag, or keyword.`
+                    : filter === 'UNREAD'
+                      ? 'You are all caught up.'
+                      : filter === 'READ'
+                        ? 'Read notifications will appear here.'
+                        : 'Notifications will appear here as events occur.'
+                }
               />
             </div>
           ) : (
@@ -234,7 +249,13 @@ export default function NotificationsPage() {
               return (
                 <div
                   key={n.id}
-                  className={`p-stack-md transition-colors flex flex-col gap-3 ${n.is_read ? 'hover:bg-surface-container-highest' : 'bg-surface-container-low/60 hover:bg-surface-container-highest'}`}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={n.is_read ? 'Notification already read' : 'Mark this notification as read'}
+                  onClick={() => {
+                    if (!n.is_read) void markOneRead(n.id)
+                  }}
+                  className={`p-stack-md transition-colors flex flex-col gap-3 cursor-pointer ${n.is_read ? 'hover:bg-surface-container-highest' : 'bg-surface-container-low/60 hover:bg-surface-container-highest'}`}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -257,7 +278,10 @@ export default function NotificationsPage() {
                     <div className="flex items-center gap-2">
                       {!n.is_read && (
                         <button
-                          onClick={() => void markOneRead(n.id)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            void markOneRead(n.id)
+                          }}
                           className="bg-white text-black border-2 border-primary font-label-caps text-[10px] uppercase font-bold px-2 py-1 hover:bg-tertiary-fixed flex items-center gap-1"
                         >
                           <Icon name="done_all" className="text-[14px]" /> Mark as Read
@@ -275,7 +299,10 @@ export default function NotificationsPage() {
                   {(n.related_repair || n.related_asset) && (
                     <div
                       className="flex flex-wrap items-center gap-2 font-mono-label text-[11px] text-on-surface-variant bg-surface p-2 border border-primary/30 cursor-pointer"
-                      onClick={() => openRelated(n)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        openRelated(n)
+                      }}
                     >
                       {n.related_repair && (
                         <span>

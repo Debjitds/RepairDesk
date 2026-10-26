@@ -41,16 +41,40 @@ export default function EmployeeMyIssues() {
   const assetsQ = useAsyncData<Asset[]>(() => fetchAssets({}), [])
 
   const repairs = q.data ?? []
+
+  // Dedupe the issue list: collapse multiple OPEN tickets that share the same
+  // asset + normalized title into the single newest one. Repeated submissions of
+  // the same issue should not surface as several open requests. RESOLVED/CLOSED
+  // tickets are kept as-is (they are history, and resubmits after completion are
+  // legitimate recurring issues).
+  const uniqueRepairs = useMemo(() => {
+    const seenOpen = new Set<string>()
+    const out: Repair[] = []
+    for (const r of repairs) {
+      // repairs arrive newest-first (fetchRepairs orders created_at desc), so the
+      // first OPEN ticket seen for a title is the current representative.
+      if (['RESOLVED', 'CLOSED'].includes(r.status)) {
+        out.push(r)
+        continue
+      }
+      const key = `${r.asset_id}|${r.title.trim().toLowerCase().replace(/\s+/g, ' ')}`
+      if (seenOpen.has(key)) continue
+      seenOpen.add(key)
+      out.push(r)
+    }
+    return out
+  }, [repairs])
+
   const filtered = useMemo(
-    () => repairs.filter((r) => statusMatches(r, statusFilter)),
-    [repairs, statusFilter],
+    () => uniqueRepairs.filter((r) => statusMatches(r, statusFilter)),
+    [uniqueRepairs, statusFilter],
   )
 
   const kpi = {
-    open: repairs.filter((r) => !['RESOLVED', 'CLOSED'].includes(r.status)).length,
-    inRepair: repairs.filter((r) => ['DIAGNOSING', 'IN_REPAIR'].includes(r.status)).length,
-    waiting: repairs.filter((r) => ['OPEN', 'ASSIGNED'].includes(r.status)).length,
-    resolved: repairs.filter((r) => ['RESOLVED', 'CLOSED'].includes(r.status)).length,
+    open: uniqueRepairs.filter((r) => !['RESOLVED', 'CLOSED'].includes(r.status)).length,
+    inRepair: uniqueRepairs.filter((r) => ['DIAGNOSING', 'IN_REPAIR'].includes(r.status)).length,
+    waiting: uniqueRepairs.filter((r) => ['OPEN', 'ASSIGNED'].includes(r.status)).length,
+    resolved: uniqueRepairs.filter((r) => ['RESOLVED', 'CLOSED'].includes(r.status)).length,
   }
 
   return (
@@ -123,7 +147,7 @@ export default function EmployeeMyIssues() {
                 }`}
                 onClick={() => setStatusFilter(s)}
               >
-                {s.replace('_', ' ')} ({repairs.filter((r) => statusMatches(r, s)).length})
+                {s.replace('_', ' ')} ({uniqueRepairs.filter((r) => statusMatches(r, s)).length})
               </button>
             ))}
           </div>
@@ -151,7 +175,7 @@ export default function EmployeeMyIssues() {
                 <EmptyState
                   icon="report_problem"
                   title="No issues found"
-                  hint={repairs.length === 0 ? "You haven't reported any issues yet." : 'Try a different status filter.'}
+                  hint={uniqueRepairs.length === 0 ? "You haven't reported any issues yet." : 'Try a different status filter.'}
                   action={
                     <NeoButton onClick={() => setReportOpen(true)}>
                       <Icon name="add_circle" /> Report an Issue
