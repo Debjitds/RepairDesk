@@ -742,4 +742,42 @@ No existing flow altered: valid new issues still create tickets (RPC only reuses
 ### Final status
 BACKEND + DB + CODE changes COMPLETE. Duplicate repair submission is now prevented at the RPC (idempotent reuse of the existing OPEN same-asset+title ticket) and existing duplicate OPEN tickets were deduped to one per asset+title; the notification search UI now visibly reports the filtered-vs-total narrowing with a Clear action; and the QA fixtures gained employee-owned repair-update notifications (linking Notifications→Repair History) and an unassigned asset for the unauthorized-submission boundary. Build green; UI change pending deploy.
 
+---
+
+## Entry 19 — 2026-10-26: Eleventh E2E run — REGRESSION FIX: count-based ticket numbering collided after dedupe (gap-safe MAX+1); technician operational scope narrowed to assigned/in-repair assets
+
+### Problem (six findings)
+1-3,5 `Employee creates repair ticket for assigned asset` / `Create repair ticket for assigned asset` / `Reject duplicate repair submission` / `Prevent duplicate repair submissions`: "A record with this identifier already exists"; the ticket never persisted ("no matching ticket after refresh / No issues found").
+4 `TECHNICIAN — asset access is limited to operational context`: directory showed 7 records including the newly-seeded 'Unassigned Test Laptop' (LAP-900) and unrelated unassigned assets.
+6 `Reject issue reporting for an unauthorized asset` (Environment): employee picker offered only LAP-018/MOB-011.
+
+### Root cause — #1/2/3/5 is a REGRESSION caused by Entry 18
+`create_repair_ticket` generated `ticket_number = 'RD-' || (count(*) + 1001)`. That assumed contiguous 1001..N numbering. Entry 18 DELETED duplicate OPEN repairs, creating GAPS: live rows=114 but max=RD-1121, so count+1001 produced RD-1115 (already exists) → UNIQUE violation → EVERY new-ticket insert failed ("A record with this identifier already exists"), so nothing persisted and My Issues showed no new ticket. (The idempotency guard from Entry 18 is fine; the numbering was the latent bug the dedupe exposed.)
+
+### Fixes
+A. Database — migration `fix_create_repair_ticket_number_sequence_gap_safe`: rewrote `create_repair_ticket` to allocate the next ticket from `MAX((split_part(ticket_number,'-',2))::int)+1` (gap-safe) instead of COUNT+1001, inside a short retry loop (catch `unique_violation`, up to 10 attempts) for concurrency, filtered to rows matching `^RD-[0-9]+$`. The Entry 18 OPEN same-asset+title idempotency guard is retained (returns the existing ticket, no insert). Verified next number = RD-1122 (no collision). This restores successful ticket creation AND keeps duplicate-submit returning exactly one visible ticket.
+B. Code — `src/pages/technician/Assets.tsx`: technician operational scope is now `status !== RETIRED (query) AND (assigned_to IS NOT NULL OR has an open repair)`. Live result: 4 VISIBLE (LAP-018, MOB-011, MON-044, PROJ-023-in-repair); hidden: LAP-022 (retired), LAP-900/NET-005/PRN-011 (unassigned, no open repair). This is a restricted repair-work view, not the whole inventory. KPI/directory counts use the filtered `assets`.
+C. `#6` unauthorized asset: the employee report picker intentionally lists ONLY the signed-in employee's assigned, non-retired assets (fetchAssets is RLS-scoped), so an unassigned/non-owned asset can never be selected — that IS the boundary. LAP-900 (seeded Entry 18) remains unassigned and is not offered; the RPC still rejects any EMPLOYEE submit for a non-assigned asset (FORBIDDEN). No app change (exposing it would break the security feature). Environment-level rejection is verified at the RPC.
+
+### Files changed
+1. `create_repair_ticket` RPC (Supabase `puaobtjdcnlxixplpqjx`) — gap-safe MAX+1 numbering + retry; idempotency guard kept.
+2. `src/pages/technician/Assets.tsx` — operational filter (assigned OR open-repair) atop excludeRetired.
+3. `dist/*` — rebuilt (`npm run build`, EXITCODE=0, 110 modules).
+4. `memory.md` — this appended entry.
+
+### Non-breaking
+Valid new issues now persist again (RD-1122+); duplicate submits reuse the existing OPEN ticket (one visible). Technician Assets page still uses the same filters/search/warranty/location controls (just a narrower base set). Employee picker + notification flows unchanged.
+
+### Verification
+- SQL: next ticket = 1122 (no collision); technician scope query returns 4 VISIBLE / 4 hidden as listed.
+- `npm run build` passes (tsc -b && vite build; 110 modules; EXITCODE=0).
+- RPC change is LIVE (applied to the shared DB) so #1/2/3/5 should pass even against the stale UI bundle; #4 technician filter is UI-only (pending deploy).
+
+### Not done / remaining
+1. UI changes (Entries 11–19) still UNCOMMITTED; technician-scope fix and notification search-summary need commit/push/deploy to take effect on the deployed app the E2E hits. DB/RPC fixes are already live.
+2. Recommend a follow-up hardening: a DB sequence for ticket numbers (instead of MAX+1) to fully remove any concurrency race, and re-verify all six specs in a browser after deploy.
+
+### Final status
+REGRESSION RESOLVED + scope fix COMPLETE. Ticket creation works again via gap-safe MAX+1 numbering (with retry), while duplicate-submit idempotency is preserved at the RPC; the technician asset directory is narrowed to repair-relevant (assigned or open-repair) assets, excluding unassigned/unrelated/retired. Build green; DB fixes live, UI fixes pending deploy.
+
 
