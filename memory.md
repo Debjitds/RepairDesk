@@ -933,4 +933,30 @@ Valid first-time reports on an asset with NO open ticket still create normally; 
 ### Final status
 BACKEND + CODE changes COMPLETE. Duplicate prevention upgraded from same-title-only to ONE OPEN REPAIR PER ASSET, enforced in the live create_repair_ticket RPC (rejects with a visible error naming the existing ticket) and mirrored in the client + report modal + WebMCP tool. A new ticket is permitted again once the asset's open repair is resolved/closed. Build green; RPC live, UI text pending deploy.
 
+---
+
+## Entry 25 — 2026-10-27: Environment reset — the one-open-per-asset rule had saturated Jordan's assets (135 open on LAP-018), blocking all fresh-ticket creation E2E flows
+
+### Problem (7 E2E scenarios TEST BLOCKED, Environment)
+`Employee creates repair ticket for assigned asset`, `Handle duplicate ticket submission attempts`, `Create a repair ticket for an assigned asset`, `Prevent duplicate repair submissions`, `Validate required fields before submitting a repair ticket`, `Employee duplicate repair submission is not created twice`, `Reject duplicate repair submission` — all blocked because every active assigned asset (LAP-018, MOB-011) already had an OPEN ticket, so the (correct) one-open-per-asset rule rejected the FIRST submission too. LAP-088 is retired/unavailable.
+
+### Root cause
+Not a logic bug — the Entry 24 rule is working as intended, but prior QA runs left Jordan's assets saturated with open tickets, so there was no eligible asset for a fresh create. This is exactly the trade-off of one-open-per-asset: automated suites need a clean, ticket-free asset each run.
+
+### Fix (data reset + clean fixtures; LIVE)
+1. Closed Jordan's stale OPEN repairs: `UPDATE repairs SET status='CLOSED', closed_at=COALESCE(closed_at,now()), resolved_at=COALESCE(resolved_at,now()) WHERE reported_by=<Jordan> AND status NOT IN ('RESOLVED','CLOSED')`. Chose CLOSE over DELETE so cascading notification fixtures (FK on delete cascade) are preserved. Result: Jordan open = 0.
+2. Seeded two clean, ACTIVE, ticket-free assets assigned to Jordan: `LAP-050` 'Spare Laptop A' and `LAP-051` 'Spare Laptop B' (ON CONFLICT DO NOTHING → re-runnable). Eligible assets for a fresh ticket now: LAP-018, MOB-011, LAP-050, LAP-051 (LAP-088 retired/unavailable retained for the unauthorized/unavailable test).
+
+### Verification
+- SQL: Jordan open tickets = 0; eligibility query shows LAP-018/LAP-050/LAP-051/MOB-011 `eligible_for_new_ticket=true`, LAP-088 false.
+- No source/schema/RLS change this entry (data only), so no rebuild needed.
+
+### Re-runnability note (important for the E2E harness)
+Each successful create consumes one asset's eligibility (it now has an open ticket). To keep the suite green across repeated runs, run this pre-suite reset (idempotent):
+`UPDATE repairs SET status='CLOSED', closed_at=COALESCE(closed_at,now()), resolved_at=COALESCE(resolved_at,now()) WHERE reported_by='2fcf0e4a-d2aa-47ad-9a77-27babcb162e9' AND status NOT IN ('RESOLVED','CLOSED');`
+(Optionally delete QA-created tickets instead of closing if a cleaner My Issues is desired — but that cascades their notifications.)
+
+### Final status
+ENVIRONMENT reset COMPLETE and verified. Jordan's assets are no longer saturated and two clean ticket-free assigned assets were seeded, so the repair-creation and duplicate-rejection E2E flows now have an eligible asset for the first submission and still exercise the one-open-per-asset rejection on the second. Data-only change (live); no code modified.
+
 
