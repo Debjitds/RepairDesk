@@ -31,11 +31,19 @@ export default function TechnicianAssets() {
   const [warranty, setWarranty] = useState('ALL')
   const [location, setLocation] = useState('ALL')
 
-  const filters: AssetFilters = { search: debounced, status, category, location, warranty }
+  const filters: AssetFilters = { search: debounced, status, category, location, warranty, excludeRetired: true }
   const q = useAsyncData<Asset[]>(() => fetchAssets(filters), [debounced, status, category, location, warranty])
   const locsQ = useAsyncData<string[]>(() => fetchAssetLocations(), [])
 
-  const assets = q.data ?? []
+  // Operational, repair-work scope: the query already drops RETIRED assets. On top of
+  // that, hide idle assets that are neither assigned to anyone nor currently in an
+  // open repair, so the technician directory shows only assets relevant to repair
+  // work (not the whole org inventory / unassigned stock).
+  const allAssets = q.data ?? []
+  const assets = useMemo(
+    () => allAssets.filter((a) => !!a.assigned_to || !!a.open_repair_id),
+    [allAssets],
+  )
   const kpi = useMemo(
     () => ({
       total: assets.length,
@@ -141,7 +149,6 @@ export default function TechnicianAssets() {
                 <option value="ALL">All Statuses</option>
                 <option value="ACTIVE">Active</option>
                 <option value="IN_REPAIR">In Repair</option>
-                <option value="RETIRED">Retired</option>
               </select>
             </div>
             <div className="md:col-span-2">

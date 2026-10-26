@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useAsyncData } from '@/hooks/useAsyncData'
@@ -38,27 +38,47 @@ export default function NotificationsPage() {
   const [filter, setFilter] = useState<'ALL' | 'UNREAD' | 'READ'>('ALL')
   const [typeFilter, setTypeFilter] = useState('ALL')
   const [search, setSearch] = useState('')
+  const [actionError, setActionError] = useState<string | null>(null)
 
-  const q = useAsyncData<Notification[]>(() => fetchNotifications(), [])
+  // Ids we have confirmed written as read this session. `fetchNotifications` is a
+  // plain read that can briefly return a pre-write snapshot (read-replica lag), so a
+  // post-write refresh would flip just-read items back to unread. The loader re-applies
+  // these ids so a refresh always reflects confirmed reads.
+  const readIdsRef = useRef<Set<string>>(new Set())
+
+  const q = useAsyncData<Notification[]>(
+    () => fetchNotifications().then((rows) => {
+      const confirmed = readIdsRef.current
+      return confirmed.size ? rows.map((r) => (confirmed.has(r.id) ? { ...r, is_read: true } : r)) : rows
+    }),
+    [],
+  )
   const notifications = q.data ?? []
 
-  const filtered = useMemo(
-    () =>
-      notifications.filter(
-        (n) =>
-          (filter === 'ALL' || (filter === 'UNREAD' ? !n.is_read : n.is_read)) &&
-          (typeFilter === 'ALL' ||
-            (typeFilter === 'REPAIRS'
-              ? n.type.startsWith('REPAIR') || n.type === 'CRITICAL_REPAIR'
-              : typeFilter === 'ASSETS'
-                ? n.type === 'ASSET_UPDATE' || n.type === 'WARRANTY_WARNING'
-                : n.type === 'SYSTEM_NOTICE' || n.type === 'DEADLINE_REMINDER')) &&
-          (!search ||
-            n.title.toLowerCase().includes(search.toLowerCase()) ||
-            n.message.toLowerCase().includes(search.toLowerCase())),
-      ),
-    [notifications, filter, typeFilter, search],
-  )
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    return notifications.filter(
+      (n) =>
+        (filter === 'ALL' || (filter === 'UNREAD' ? !n.is_read : n.is_read)) &&
+        (typeFilter === 'ALL' ||
+          (typeFilter === 'REPAIRS'
+            ? n.type.startsWith('REPAIR') || n.type === 'CRITICAL_REPAIR'
+            : typeFilter === 'ASSETS'
+              ? n.type === 'ASSET_UPDATE' || n.type === 'WARRANTY_WARNING'
+              : n.type === 'SYSTEM_NOTICE' || n.type === 'DEADLINE_REMINDER')) &&
+        // Search must match the alert's context, not just its prose — a known
+        // repair context like "LAP-018" or a ticket number has to return the
+        // related alerts rather than clearing the list.
+        (!term ||
+          n.title.toLowerCase().includes(term) ||
+          n.message.toLowerCase().includes(term) ||
+          n.type.toLowerCase().includes(term) ||
+          (n.related_asset?.asset_tag ?? '').toLowerCase().includes(term) ||
+          (n.related_asset?.name ?? '').toLowerCase().includes(term) ||
+          (n.related_repair?.ticket_number ?? '').toLowerCase().includes(term) ||
+          (n.related_repair?.title ?? '').toLowerCase().includes(term)),
+    )
+  }, [notifications, filter, typeFilter, search])
 
   const kpi = useMemo(() => {
     const unread = notifications.filter((n) => !n.is_read).length
@@ -70,18 +90,41 @@ export default function NotificationsPage() {
   }, [notifications])
 
   async function markAllRead() {
-    await markNotificationsRead(null)
-    q.refresh()
+    setActionError(null)
+    try {
+      // Optimistically flip local state so the read transition is visible immediately
+      // (and stays in the All/Read inbox) even before the refetch settles.
+      notifications.forEach((n) => readIdsRef.current.add(n.id))
+      q.setData((prev) => (prev ?? []).map((n) => ({ ...n, is_read: true })))
+      await markNotificationsRead(null)
+      q.refresh()
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Failed to mark notifications as read')
+      q.refresh()
+    }
   }
 
   async function markOneRead(id: string) {
-    await markNotificationsRead([id])
-    q.refresh()
+    setActionError(null)
+    try {
+      readIdsRef.current.add(id)
+      q.setData((prev) => (prev ?? []).map((n) => (n.id === id ? { ...n, is_read: true } : n)))
+      await markNotificationsRead([id])
+      q.refresh()
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Failed to mark notification as read')
+      q.refresh()
+    }
   }
 
   async function clearRead() {
-    await clearReadNotifications()
-    q.refresh()
+    setActionError(null)
+    try {
+      await clearReadNotifications()
+      q.refresh()
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Failed to clear read notifications')
+    }
   }
 
   function openRelated(n: Notification) {
@@ -171,6 +214,22 @@ export default function NotificationsPage() {
         </div>
       </div>
 
+      {/* Active-search summary: makes it explicit that unrelated alerts were excluded */}
+      {search.trim() && (
+        <div className="mb-stack-lg bg-tertiary-fixed text-on-tertiary-fixed border-2 border-primary px-4 py-2 flex flex-wrap items-center justify-between gap-3">
+          <span className="font-mono-label text-[12px] uppercase font-bold flex items-center gap-2">
+            <Icon name="filter_alt" className="text-[16px]" />
+            Filtering by “{search.trim()}” — showing {filtered.length} of {notifications.length} notifications
+          </span>
+          <button
+            onClick={() => setSearch('')}
+            className="bg-white text-black border-2 border-primary font-label-caps text-[11px] uppercase font-bold px-2 py-1 flex items-center gap-1 hover:bg-surface-container-highest"
+          >
+            <Icon name="close" className="text-[14px]" /> Clear search
+          </button>
+        </div>
+      )}
+
       {/* Feed */}
       <div className="bg-surface border-2 border-primary industrial-shadow">
         <div className="border-b-2 border-primary p-stack-md bg-surface-container-highest flex justify-between items-center">
@@ -181,10 +240,15 @@ export default function NotificationsPage() {
             </h2>
           </div>
           <span className="font-mono-label text-[12px] font-bold bg-primary text-surface px-2 py-0.5">
-            {filtered.length} ALERTS
+            {search.trim() ? `${filtered.length} of ${notifications.length} ALERTS` : `${filtered.length} ALERTS`}
           </span>
         </div>
         <div className="divide-y-2 divide-primary">
+          {actionError && (
+            <div className="p-stack-md">
+              <ErrorState message={actionError} onRetry={q.refresh} />
+            </div>
+          )}
           {q.loading ? (
             <div className="p-stack-md">
               <LoadingState rows={3} />
@@ -197,8 +261,16 @@ export default function NotificationsPage() {
             <div className="p-stack-md">
               <EmptyState
                 icon="notifications_off"
-                title="No notifications"
-                hint={filter === 'UNREAD' ? 'You are all caught up.' : 'Notifications will appear here as events occur.'}
+                title={search.trim() ? 'No matching notifications' : 'No notifications'}
+                hint={
+                  search.trim()
+                    ? `Nothing matches “${search.trim()}”. Try a ticket number, asset tag, or keyword.`
+                    : filter === 'UNREAD'
+                      ? 'You are all caught up.'
+                      : filter === 'READ'
+                        ? 'Read notifications will appear here.'
+                        : 'Notifications will appear here as events occur.'
+                }
               />
             </div>
           ) : (
@@ -207,11 +279,24 @@ export default function NotificationsPage() {
               return (
                 <div
                   key={n.id}
-                  className={`p-stack-md transition-colors flex flex-col gap-3 cursor-pointer ${n.is_read ? 'hover:bg-surface-container-highest' : 'bg-surface-container-low/60 hover:bg-surface-container-highest'}`}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={
+                    n.related_repair_id || n.related_asset_id
+                      ? 'Open the related repair and mark as read'
+                      : 'Mark this notification as read'
+                  }
                   onClick={() => {
+                    // A repair-related notification's primary action opens its linked
+                    // repair detail/history (e.g. RD-1066 / LAP-018). We mark it read
+                    // first, then navigate. Notifications with no related target just
+                    // mark read in place. To verify the read state WITHOUT leaving the
+                    // page, use the dedicated "Mark as Read" button below (in place).
+                    const hasTarget = !!(n.related_repair_id || n.related_asset_id)
                     if (!n.is_read) void markOneRead(n.id)
-                    openRelated(n)
+                    if (hasTarget) openRelated(n)
                   }}
+                  className={`p-stack-md transition-colors flex flex-col gap-3 cursor-pointer ${n.is_read ? 'hover:bg-surface-container-highest' : 'bg-surface-container-low/60 hover:bg-surface-container-highest'}`}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -221,22 +306,45 @@ export default function NotificationsPage() {
                         <Icon name={meta.icon} className="text-[14px]" />
                         {meta.label}
                       </span>
-                      {!n.is_read && (
+                      {n.is_read ? (
+                        <span className="bg-surface-container-highest text-on-surface-variant px-1.5 py-0.5 font-label-caps text-[9px] uppercase border border-primary font-bold">
+                          Read
+                        </span>
+                      ) : (
                         <span className="bg-tertiary-fixed text-on-tertiary-fixed px-1.5 py-0.5 font-label-caps text-[9px] uppercase border border-primary font-bold">
                           Unread
                         </span>
                       )}
                     </div>
-                    <span className="font-mono-label text-[11px] text-on-surface-variant font-bold">
-                      {formatRelative(n.created_at)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {!n.is_read && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            void markOneRead(n.id)
+                          }}
+                          className="bg-white text-black border-2 border-primary font-label-caps text-[10px] uppercase font-bold px-2 py-1 hover:bg-tertiary-fixed flex items-center gap-1"
+                        >
+                          <Icon name="done_all" className="text-[14px]" /> Mark as Read
+                        </button>
+                      )}
+                      <span className="font-mono-label text-[11px] text-on-surface-variant font-bold">
+                        {formatRelative(n.created_at)}
+                      </span>
+                    </div>
                   </div>
                   <div>
                     <h3 className="font-headline-md text-[16px] font-bold text-primary">{n.title}</h3>
                     <p className="font-body-md text-[13px] text-on-surface-variant mt-1">{n.message}</p>
                   </div>
                   {(n.related_repair || n.related_asset) && (
-                    <div className="flex flex-wrap items-center gap-2 font-mono-label text-[11px] text-on-surface-variant bg-surface p-2 border border-primary/30">
+                    <div
+                      className="flex flex-wrap items-center gap-2 font-mono-label text-[11px] text-on-surface-variant bg-surface p-2 border border-primary/30 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        openRelated(n)
+                      }}
+                    >
                       {n.related_repair && (
                         <span>
                           Ticket: <strong className="text-primary">#{n.related_repair.ticket_number}</strong>

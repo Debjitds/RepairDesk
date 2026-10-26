@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useAsyncData } from '@/hooks/useAsyncData'
 import { createRepairTicket, fetchRepairs } from '@/services/repairService'
-import { fetchAssets } from '@/services/assetService'
+import { fetchAssets, fetchReportingAssetOptions, type ReportingAssetOption } from '@/services/assetService'
 import { supabase } from '@/lib/supabase'
 import {
   Icon,
@@ -331,38 +331,115 @@ export function ReportIssueModal({
   onClose: () => void
   onCreated: () => void
 }) {
-  const [assetId, setAssetId] = useState(assets[0]?.id ?? '')
+  // Full org catalog for the picker (read-only); only assets assigned to this
+  // employee (and not retired) are `assignable`. Selecting a non-assignable asset
+  // is rejected inline here and independently by create_repair_ticket (FORBIDDEN).
+  const optionsQ = useAsyncData<ReportingAssetOption[]>(() => fetchReportingAssetOptions(), [])
+  const options: ReportingAssetOption[] = optionsQ.data?.length
+    ? optionsQ.data
+    : assets.map((a) => ({ id: a.id, asset_tag: a.asset_tag, name: a.name, status: a.status, assignable: a.status !== 'RETIRED', has_open_repair: false }))
+  const firstEligible = (options.find((o) => o.assignable && !o.has_open_repair) ?? options.find((o) => o.assignable))?.id ?? assets[0]?.id ?? ''
+  const [assetId, setAssetId] = useState(firstEligible)
+  const eligibleBlocked = (o?: ReportingAssetOption) => !o || !o.assignable || o.has_open_repair
+
+  // Once the org catalog loads, default to an assignable asset that has NO open
+  // ticket (the RPC orders eligible assets first), so the create flow is not
+  // pre-blocked by an asset that already has an open repair.
+  useEffect(() => {
+    if (!optionsQ.data) return
+    const current = options.find((o) => o.id === assetId)
+    if (eligibleBlocked(current)) setAssetId(firstEligible)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [optionsQ.data])
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [priority, setPriority] = useState<RepairPriority>('MEDIUM')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false)
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
+    // In-flight guard: repeated clicks/enters cannot fire a second request.
+    if (busy) return
     setError(null)
-    if (!assetId) {
+    // Frontend validation — a failed/invalid submission must render an inline error
+    // and never transition to an open ticket.
+    const selected = options.find((o) => o.id === assetId)
+    if (!assetId || !selected) {
       setError('Select the asset with the problem.')
       return
     }
-    if (title.trim().length < 3) {
+    if (!selected.assignable) {
+      setError(
+        selected.status === 'RETIRED'
+          ? 'This asset is retired and unavailable for issue reporting. Please choose an active asset.'
+          : `You can only report issues on assets assigned to you — ${selected.asset_tag} is not assigned to you.`,
+      )
+      return
+    }
+    const cleanTitle = title.trim()
+    const cleanDesc = description.trim()
+    if (cleanTitle.length < 3) {
       setError('Describe the issue in the title (at least 3 characters).')
       return
     }
-    if (description.trim().length < 3) {
-      setError('Add a short description of the problem.')
+    if (cleanTitle.length > 200) {
+      setError('Title must be 200 characters or fewer.')
+      return
+    }
+    if (cleanDesc.length < 3) {
+      setError('Add a short description of the problem (at least 3 characters).')
+      return
+    }
+    if (cleanDesc.length > 4000) {
+      setError('Description must be 4000 characters or fewer.')
+      return
+    }
+    // Priority is a controlled select (only LOW/MEDIUM/HIGH/CRITICAL), so a normal UI
+    // interaction cannot produce an invalid value. Guard defensively anyway: a
+    // malformed/unexpected priority surfaces a visible in-app error instead of being
+    // silently sent to the backend.
+    const VALID_PRIORITIES: RepairPriority[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
+    if (!VALID_PRIORITIES.includes(priority)) {
+      setError('Choose a valid priority.')
       return
     }
     setBusy(true)
     try {
-      await createRepairTicket({
+      const { repair, created } = await createRepairTicket({
         asset_id: assetId,
-        title: title.trim(),
-        description: description.trim(),
+        title: cleanTitle,
+        description: cleanDesc,
         priority,
       })
-      onCreated()
+      if (created) {
+        // Only treat this as success — and only then let the parent close/navigate —
+        // if the backend actually FINALIZED a proper open ticket: a persisted row with
+        // a real id/ticket_number, status OPEN, and for the asset we submitted. Any
+        // other outcome is a failed submission that must surface a visible error and
+        // KEEP the form, never leave the user with a successful-looking open-ticket state.
+        const finalized =
+          !!repair &&
+          !!repair.id &&
+          !!repair.ticket_number &&
+          repair.status === 'OPEN' &&
+          repair.asset_id === assetId
+        if (finalized) {
+          onCreated()
+        } else {
+          setError('The repair request could not be finalized. No confirmed open ticket was created — please try again.')
+        }
+      } else {
+        // One open repair per asset: this asset already has an open ticket. Show a
+        // visible error, keep the form, and do NOT create a second open ticket.
+        setAlreadySubmitted(true)
+        setError(
+          `You already have an open ticket #${repair.ticket_number} for ${selected.asset_tag}. You can't report another issue for this asset until that ticket is resolved. No new ticket was created.`,
+        )
+      }
     } catch (err) {
+      // Stay on the form with all entered values preserved and show the failure inline.
       setError(err instanceof Error ? err.message : 'Failed to submit issue')
     } finally {
       setBusy(false)
@@ -383,13 +460,28 @@ export function ReportIssueModal({
         <div className="p-5 space-y-4">
           <FormError message={error} />
           <Field label="Asset with the problem">
-            <select className={inputCls} value={assetId} onChange={(e) => setAssetId(e.target.value)} required>
+            <select
+              className={inputCls}
+              value={assetId}
+              onChange={(e) => {
+                setAssetId(e.target.value)
+                setAlreadySubmitted(false)
+              }}
+              required
+            >
               <option value="" disabled>
                 Select an asset…
               </option>
-              {assets.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.asset_tag} — {a.name}
+              {options.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.asset_tag} — {o.name}
+                  {o.assignable
+                    ? o.has_open_repair
+                      ? ' (has an open ticket)'
+                      : ''
+                    : o.status === 'RETIRED'
+                      ? ' (unavailable — retired)'
+                      : ' (not your asset)'}
                 </option>
               ))}
             </select>
@@ -399,7 +491,10 @@ export function ReportIssueModal({
               className={inputCls}
               placeholder="e.g. Laptop is overheating"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => {
+                setTitle(e.target.value)
+                setAlreadySubmitted(false)
+              }}
               maxLength={200}
               required
             />
@@ -431,8 +526,9 @@ export function ReportIssueModal({
           <NeoButton tone="surface" onClick={onClose} type="button">
             Cancel
           </NeoButton>
-          <NeoButton type="submit" disabled={busy}>
-            <Icon name="send" /> {busy ? 'Submitting…' : 'Submit Issue'}
+          <NeoButton type="submit" disabled={busy || alreadySubmitted} title={alreadySubmitted ? 'This asset already has an open ticket' : undefined}>
+            <Icon name={alreadySubmitted ? 'block' : 'send'} />{' '}
+            {busy ? 'Submitting…' : alreadySubmitted ? 'Blocked · Duplicate' : 'Submit Issue'}
           </NeoButton>
         </div>
       </form>

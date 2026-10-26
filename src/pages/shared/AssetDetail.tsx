@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useAsyncData } from '@/hooks/useAsyncData'
@@ -19,9 +20,26 @@ export default function AssetDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const [historySearch, setHistorySearch] = useState('')
 
   const assetQ = useAsyncData(() => fetchAsset(id!), [id])
   const historyQ = useAsyncData<Repair[]>(() => fetchAssetRepairHistory(id!), [id])
+
+  // Search across the asset's repair-history records (ticket number, issue,
+  // resolution, technician) so employees can filter their repair history here.
+  const history = useMemo(() => {
+    const all = historyQ.data ?? []
+    const term = historySearch.trim().toLowerCase()
+    if (!term) return all
+    return all.filter(
+      (r) =>
+        r.ticket_number.toLowerCase().includes(term) ||
+        r.title.toLowerCase().includes(term) ||
+        (r.resolution ?? '').toLowerCase().includes(term) ||
+        (r.diagnosis ?? '').toLowerCase().includes(term) ||
+        (r.technician?.full_name ?? '').toLowerCase().includes(term),
+    )
+  }, [historyQ.data, historySearch])
 
   const asset = assetQ.data
   if (assetQ.loading) return <LoadingState rows={5} />
@@ -131,8 +149,23 @@ export default function AssetDetailPage() {
             <div className="border-b-2 border-primary p-stack-md bg-surface-container-highest flex justify-between items-center">
               <h2 className="font-label-caps text-label-caps uppercase">Repair History</h2>
               <span className="font-mono-label text-[11px] text-on-surface-variant uppercase">
-                {(historyQ.data ?? []).length} records
+                {history.length}{historySearch.trim() && history.length !== (historyQ.data ?? []).length
+                  ? ` of ${(historyQ.data ?? []).length}`
+                  : ''} records
               </span>
+            </div>
+            <div className="p-stack-md border-b-2 border-primary">
+              <div className="relative flex items-center">
+                <Icon name="search" className="absolute left-3 text-[18px] text-on-surface-variant" />
+                <input
+                  className="w-full bg-white border-2 border-primary font-mono-label text-mono-label pl-9 pr-3 py-2 focus:outline-none"
+                  placeholder="Search history: ticket, issue, resolution, technician…"
+                  type="text"
+                  value={historySearch}
+                  onChange={(e) => setHistorySearch(e.target.value)}
+                  aria-label="Search repair history"
+                />
+              </div>
             </div>
             <div className="divide-y divide-outline">
               {historyQ.loading && (
@@ -150,7 +183,12 @@ export default function AssetDetailPage() {
                   <EmptyState icon="history" title="No repair history" hint="Completed repairs for this asset will appear here." />
                 </div>
               )}
-              {(historyQ.data ?? []).map((r) => (
+              {!historyQ.loading && (historyQ.data ?? []).length > 0 && history.length === 0 && (
+                <div className="p-stack-md">
+                  <EmptyState icon="search_off" title="No matching records" hint="No repair-history records match your search." />
+                </div>
+              )}
+              {history.map((r) => (
                 <div
                   key={r.id}
                   className="p-3 hover:bg-surface-container-highest cursor-pointer transition-colors"

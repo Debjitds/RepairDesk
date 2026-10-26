@@ -245,6 +245,17 @@ export function FormSuccess({ message }: { message: string | null }) {
   )
 }
 
+/** Warning banner — used for prevented/blocked actions that are NOT a successful create. */
+export function FormWarning({ message }: { message: string | null }) {
+  if (!message) return null
+  return (
+    <div className="bg-signal-orange text-black border-2 border-primary px-3 py-2 font-body-md text-sm flex items-start gap-2" role="status">
+      <Icon name="warning" className="text-[18px] shrink-0" fill />
+      <span>{message}</span>
+    </div>
+  )
+}
+
 /** Industrial input. */
 export function Field({
   label,

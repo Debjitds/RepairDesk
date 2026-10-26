@@ -95,6 +95,10 @@ export default function SettingsPage() {
 
 function ProfileTab() {
   const { user, refreshUser } = useAuth()
+  // Employees must not see restricted account controls/identifiers (role, department,
+  // organization, internal Application ID) — those are admin-managed and irrelevant
+  // to a personal-settings view. Managers/Admins keep the full account panel.
+  const isEmployee = user?.role === 'EMPLOYEE'
   const [fullName, setFullName] = useState(user?.full_name ?? '')
   const [phone, setPhone] = useState(user?.phone ?? '')
   const [busy, setBusy] = useState(false)
@@ -141,23 +145,33 @@ function ProfileTab() {
                 <input className={inputCls} value={phone ?? ''} onChange={(e) => setPhone(e.target.value)} placeholder="Optional" />
               </Field>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-stack-md pt-2">
-              <Field label="Role" hint="Managed by Admin">
-                <div className="bg-surface-dim border-2 border-primary p-2 font-mono-label text-[13px] font-bold text-primary flex items-center justify-between">
-                  <span>{user ? ROLE_LABEL[user.role] : '—'}</span>
-                  <Icon name="lock" className="text-[16px]" />
-                </div>
-              </Field>
-              <Field label="Department" hint="Managed by Admin">
-                <div className="bg-surface-dim border-2 border-primary p-2 font-body-md text-[13px] text-on-surface">
-                  {user?.department ?? '—'}
-                </div>
-              </Field>
-              <Field label="Organization">
-                <div className="bg-surface-dim border-2 border-primary p-2 font-body-md text-[13px] text-on-surface">
-                  RepairDesk
-                </div>
-              </Field>
+            <div className={`grid grid-cols-1 ${isEmployee ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-stack-md pt-2`}>
+              {isEmployee ? (
+                <Field label="Email">
+                  <div className="bg-surface-dim border-2 border-primary p-2 font-body-md text-[13px] text-on-surface">
+                    {user?.email ?? '—'}
+                  </div>
+                </Field>
+              ) : (
+                <>
+                  <Field label="Role" hint="Managed by Admin">
+                    <div className="bg-surface-dim border-2 border-primary p-2 font-mono-label text-[13px] font-bold text-primary flex items-center justify-between">
+                      <span>{user ? ROLE_LABEL[user.role] : '—'}</span>
+                      <Icon name="lock" className="text-[16px]" />
+                    </div>
+                  </Field>
+                  <Field label="Department" hint="Managed by Admin">
+                    <div className="bg-surface-dim border-2 border-primary p-2 font-body-md text-[13px] text-on-surface">
+                      {user?.department ?? '—'}
+                    </div>
+                  </Field>
+                  <Field label="Organization">
+                    <div className="bg-surface-dim border-2 border-primary p-2 font-body-md text-[13px] text-on-surface">
+                      RepairDesk
+                    </div>
+                  </Field>
+                </>
+              )}
             </div>
             <div className="pt-4 flex items-center justify-between border-t-2 border-primary">
               <span className="font-mono-label text-[11px] text-on-surface-variant">
@@ -179,22 +193,39 @@ function ProfileTab() {
             </h3>
           </div>
           <div className="p-stack-md space-y-3">
-            <div className="flex justify-between items-center text-[13px] border-b border-outline pb-2">
-              <span className="font-label-caps text-[12px] uppercase text-on-surface-variant">Current Session</span>
-              <span className="font-mono-label text-[12px] font-bold text-primary flex items-center gap-1.5">
-                <span className="w-2 h-2 bg-secondary-container inline-block" /> {user?.email.split('@')[1] ?? '—'}
-              </span>
-            </div>
-            <div className="flex justify-between items-center text-[13px] border-b border-outline pb-2">
-              <span className="font-label-caps text-[12px] uppercase text-on-surface-variant">Role</span>
-              <span className="bg-tertiary-fixed text-on-tertiary-fixed px-2 py-0.5 border border-primary font-label-caps text-[10px] uppercase font-bold">
-                {user ? ROLE_LABEL[user.role] : '—'}
-              </span>
-            </div>
-            <div className="flex justify-between items-start text-[13px] pb-1">
-              <span className="font-label-caps text-[12px] uppercase text-on-surface-variant">Application ID</span>
-              <span className="font-mono-label text-[11px] text-on-surface">{user?.id.slice(0, 8).toUpperCase()}</span>
-            </div>
+            {isEmployee ? (
+              <>
+                <div className="flex justify-between items-center text-[13px] border-b border-outline pb-2">
+                  <span className="font-label-caps text-[12px] uppercase text-on-surface-variant">Signed in as</span>
+                  <span className="font-body-md text-[13px] font-bold text-primary">{user?.full_name ?? '—'}</span>
+                </div>
+                <div className="flex justify-between items-center text-[13px] pb-1">
+                  <span className="font-label-caps text-[12px] uppercase text-on-surface-variant">Member since</span>
+                  <span className="font-mono-label text-[12px] text-on-surface">
+                    {new Date(user?.created_at ?? Date.now()).toLocaleDateString()}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex justify-between items-center text-[13px] border-b border-outline pb-2">
+                  <span className="font-label-caps text-[12px] uppercase text-on-surface-variant">Current Session</span>
+                  <span className="font-mono-label text-[12px] font-bold text-primary flex items-center gap-1.5">
+                    <span className="w-2 h-2 bg-secondary-container inline-block" /> {user?.email.split('@')[1] ?? '—'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-[13px] border-b border-outline pb-2">
+                  <span className="font-label-caps text-[12px] uppercase text-on-surface-variant">Role</span>
+                  <span className="bg-tertiary-fixed text-on-tertiary-fixed px-2 py-0.5 border border-primary font-label-caps text-[10px] uppercase font-bold">
+                    {user ? ROLE_LABEL[user.role] : '—'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-start text-[13px] pb-1">
+                  <span className="font-label-caps text-[12px] uppercase text-on-surface-variant">Application ID</span>
+                  <span className="font-mono-label text-[11px] text-on-surface">{user?.id.slice(0, 8).toUpperCase()}</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
