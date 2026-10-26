@@ -419,11 +419,11 @@ export function ReportIssueModal({
           setError('The repair request could not be finalized. No confirmed open ticket was created — please try again.')
         }
       } else {
-        // Duplicate (same asset + same issue title, still open): show a visible error,
-        // keep the form and entered values, and do NOT create a new open ticket.
+        // One open repair per asset: this asset already has an open ticket. Show a
+        // visible error, keep the form, and do NOT create a second open ticket.
         setAlreadySubmitted(true)
         setError(
-          `Could not submit — #${repair.ticket_number} "${repair.title}" is already open for this asset. No new ticket was created. Use a different issue title to report a separate problem.`,
+          `You already have an open ticket #${repair.ticket_number} for ${selected.asset_tag}. You can't report another issue for this asset until that ticket is resolved. No new ticket was created.`,
         )
       }
     } catch (err) {
@@ -508,7 +508,7 @@ export function ReportIssueModal({
           <NeoButton tone="surface" onClick={onClose} type="button">
             Cancel
           </NeoButton>
-          <NeoButton type="submit" disabled={busy || alreadySubmitted} title={alreadySubmitted ? 'This issue title already has an open ticket' : undefined}>
+          <NeoButton type="submit" disabled={busy || alreadySubmitted} title={alreadySubmitted ? 'This asset already has an open ticket' : undefined}>
             <Icon name={alreadySubmitted ? 'block' : 'send'} />{' '}
             {busy ? 'Submitting…' : alreadySubmitted ? 'Blocked · Duplicate' : 'Submit Issue'}
           </NeoButton>

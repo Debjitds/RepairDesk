@@ -902,4 +902,35 @@ No schema/RLS change. Notification deep-link handler (`openRelated`) unchanged �
 ### Final status
 DB + CODE changes COMPLETE. LAP-018 repair-update notifications now deep-link to the correct LAP-018 repair (seed data fixed and verified consistent), and the employee Repair History / My Issues search now narrows the list and count immediately as the user types. Build green; data fix live, UI change pending deploy.
 
+---
+
+## Entry 24 — 2026-10-27: Strengthen duplicate prevention to ONE OPEN REPAIR PER ASSET (RPC + client + modal + WebMCP)
+
+### Problem (user-reported, with screenshot)
+An employee could raise many open tickets for the SAME asset: My Issues showed 152 open (135 on LAP-018 alone). The prior rule only blocked EXACT same-title duplicates (verified: 0 exact-duplicate open groups), so slightly different titles on the same asset slipped through — which is wrong. User's rule: once an employee has raised a ticket for an asset, they cannot raise another for that asset until it is resolved.
+
+### Root cause
+Duplicate detection keyed on `asset_id + normalized TITLE`. Different titles for the same asset were treated as different issues and allowed, enabling ticket spam on one asset.
+
+### Fix — one open repair per asset
+1. RPC `create_repair_ticket` (migration `enforce_one_open_repair_per_asset`, LIVE): after auth/org/ownership/retired/length checks, if ANY repair exists for the asset with status NOT IN (RESOLVED,CLOSED), RAISE `VALIDATION_ERROR: this asset already has an open repair (#<ticket>) - you cannot report another issue for it until that ticket is resolved`. Enforced server-side so it holds for every caller and against the stale deployed bundle. Gap-safe MAX+1 numbering retained.
+2. `src/services/repairService.ts` `createRepairTicket`: pre-check now returns the OLDEST open repair for the asset with `created:false` whenever ANY open ticket exists (was: same-title match only). Mirrors the RPC.
+3. `src/pages/employee/Dashboard.tsx` `ReportIssueModal`: blocked-submit message updated to 'You already have an open ticket #X for <ASSET>. You can't report another issue for this asset until that ticket is resolved.'; submit tooltip updated.
+4. `src/mcp/tools.ts` `create_repair_ticket`: description + blocked message updated to the one-open-per-asset rule.
+5. `dist/*` rebuilt (`npm run build`, EXITCODE=0, 110 modules).
+
+### Non-breaking
+Valid first-time reports on an asset with NO open ticket still create normally; a new ticket is allowed again once the existing one is RESOLVED/CLOSED (recurring issues still supported). Only the ability to stack multiple OPEN tickets on one asset is removed — which is the intended behavior. Managers/Admins unaffected (create_repair_ticket is EMPLOYEE-only).
+
+### Verification
+- SQL: `enforces_one_open_per_asset=true`, `open_only_guard=true` on the live function.
+- `npm run build` passes (110 modules, EXITCODE=0).
+
+### Not done / remaining
+1. EXISTING open-ticket spam (135 on LAP-018) is NOT auto-deleted — the rule prevents new ones going forward. A one-time cleanup (close/delete all but the oldest open ticket per asset) is offered but destructive; awaiting user approval.
+2. UI changes (modal text) source-only pending deploy; the RPC guard is already live so the enforcement is effective now.
+
+### Final status
+BACKEND + CODE changes COMPLETE. Duplicate prevention upgraded from same-title-only to ONE OPEN REPAIR PER ASSET, enforced in the live create_repair_ticket RPC (rejects with a visible error naming the existing ticket) and mirrored in the client + report modal + WebMCP tool. A new ticket is permitted again once the asset's open repair is resolved/closed. Build green; RPC live, UI text pending deploy.
+
 

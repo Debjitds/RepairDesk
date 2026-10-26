@@ -137,19 +137,20 @@ export async function createRepairTicket(input: {
   if (pending) return pending
 
   const attempt = (async (): Promise<{ repair: Repair; created: boolean }> => {
-    // Duplicate detection: an existing OPEN ticket for this asset with the same
-    // normalized title. Repeat submissions reuse it instead of opening a second
-    // open ticket with the same issue title.
+    // One open repair per asset: if this asset already has ANY open ticket, reuse it
+    // (created:false) instead of opening a second one — regardless of title. This
+    // mirrors the create_repair_ticket RPC guard so an employee cannot pile up
+    // multiple open tickets for the same asset. A new ticket is allowed only once the
+    // existing one is RESOLVED/CLOSED.
     const { data: openRows, error: openError } = await supabase
       .from('repairs')
       .select(REPAIR_SELECT)
       .eq('asset_id', input.asset_id)
       .not('status', 'in', '("RESOLVED","CLOSED")')
-      .order('created_at', { ascending: false })
-      .limit(100)
-    if (!openError && openRows) {
-      const existing = (openRows as unknown as Repair[]).find((r) => normalizeTicketText(r.title) === wantedTitle)
-      if (existing) return { repair: existing, created: false }
+      .order('created_at', { ascending: true })
+      .limit(1)
+    if (!openError && openRows && openRows.length > 0) {
+      return { repair: (openRows as unknown as Repair[])[0], created: false }
     }
 
     const { data, error } = await supabase.rpc('create_repair_ticket', {
