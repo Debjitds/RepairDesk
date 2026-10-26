@@ -15,7 +15,19 @@ import { formatDate } from '@/lib/format'
 import type { Asset, Repair, RepairStatus } from '@/types'
 import { fetchAssets } from '@/services/assetService'
 
-const OPEN_STATUSES: ('ALL' | RepairStatus)[] = ['ALL', 'OPEN', 'ASSIGNED', 'DIAGNOSING', 'IN_REPAIR', 'RESOLVED', 'CLOSED']
+const STATUS_CHIPS: ('ALL' | RepairStatus)[] = ['ALL', 'OPEN', 'ASSIGNED', 'DIAGNOSING', 'IN_REPAIR', 'RESOLVED']
+
+/**
+ * Chip filtering must use the SAME grouping as the summary KPIs. The RESOLVED
+ * summary card counts completed tickets (RESOLVED + CLOSED), so the RESOLVED
+ * filter does too — otherwise the summary could show 2 while the filtered list
+ * showed 0 ("No issues found"), which is the inconsistency we're fixing.
+ */
+function statusMatches(r: Repair, f: 'ALL' | RepairStatus): boolean {
+  if (f === 'ALL') return true
+  if (f === 'RESOLVED') return r.status === 'RESOLVED' || r.status === 'CLOSED'
+  return r.status === f
+}
 
 /** Employee My Issues per Stitch `employee_my_issue.html`. */
 export default function EmployeeMyIssues() {
@@ -30,7 +42,7 @@ export default function EmployeeMyIssues() {
 
   const repairs = q.data ?? []
   const filtered = useMemo(
-    () => (statusFilter === 'ALL' ? repairs : repairs.filter((r) => r.status === statusFilter)),
+    () => repairs.filter((r) => statusMatches(r, statusFilter)),
     [repairs, statusFilter],
   )
 
@@ -97,22 +109,21 @@ export default function EmployeeMyIssues() {
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-mono-label text-xs uppercase text-on-surface-variant font-bold mr-1">STATUS:</span>
-            {OPEN_STATUSES.map((s) => (
+            {STATUS_CHIPS.map((s) => (
               <button
                 key={s}
                 className={`px-3 py-1.5 border-[3px] border-primary font-label-caps text-xs uppercase font-bold ${
                   statusFilter === s
                     ? s === 'IN_REPAIR'
                       ? 'bg-signal-orange text-black'
-                      : s === 'RESOLVED' || s === 'CLOSED'
+                      : s === 'RESOLVED'
                         ? 'bg-electric-yellow text-black'
                         : 'bg-primary text-white'
                     : 'bg-white text-black hover:bg-surface-container-highest'
                 }`}
                 onClick={() => setStatusFilter(s)}
               >
-                {s.replace('_', ' ')}
-                {s === 'ALL' && ` (${repairs.length})`}
+                {s.replace('_', ' ')} ({repairs.filter((r) => statusMatches(r, s)).length})
               </button>
             ))}
           </div>

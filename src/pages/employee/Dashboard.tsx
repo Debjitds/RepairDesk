@@ -14,7 +14,7 @@ import {
   Field,
   inputCls,
   FormError,
-  FormSuccess,
+  FormWarning,
   NeoButton,
 } from '@/components/ui/primitives'
 import { dueLabel, formatRelative, initials } from '@/lib/format'
@@ -370,9 +370,13 @@ export function ReportIssueModal({
       if (created) {
         onCreated()
       } else {
-        // Duplicate submission: surface the existing open ticket, keep form state.
+        // True duplicate (same asset + same title + same description, still open):
+        // surface the exact matching ticket, keep form state, and do NOT imply a new
+        // ticket was created.
         setAlreadySubmitted(true)
-        setNotice(`Already submitted — ticket #${repair.ticket_number} is still open for this issue. No duplicate ticket was created.`)
+        setNotice(
+          `Duplicate prevented — this exact issue is already open as #${repair.ticket_number} "${repair.title}". No new ticket was created. Edit the title or description to report a different problem.`,
+        )
       }
     } catch (err) {
       // Stay on the form with all entered values preserved and show the failure inline.
@@ -395,7 +399,7 @@ export function ReportIssueModal({
         </div>
         <div className="p-5 space-y-4">
           <FormError message={error} />
-          <FormSuccess message={notice} />
+          <FormWarning message={notice} />
           <Field label="Asset with the problem">
             <select
               className={inputCls}

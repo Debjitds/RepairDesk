@@ -100,28 +100,29 @@ export async function fetchAssetRepairHistory(assetId: string): Promise<Repair[]
 
 // ---------- Mutations (all flow through backend RPC business logic) ----------
 
-/** Title normalization used for duplicate detection (trim, collapse spaces, case-insensitive). */
-function normalizeTicketTitle(title: string): string {
-  return title.trim().toLowerCase().replace(/\s+/g, ' ')
+/** Text normalization used for duplicate detection (trim, collapse spaces, case-insensitive). */
+function normalizeTicketText(text: string): string {
+  return text.trim().toLowerCase().replace(/\s+/g, ' ')
 }
 
 /**
- * In-flight create calls keyed by asset + normalized title.
- * Simultaneous submissions of the same request (double-click, agent retry,
+ * In-flight create calls keyed by asset + normalized title + normalized description.
+ * Simultaneous submissions of the exact same request (double-click, agent retry,
  * e2e repeat) share one network call instead of racing two inserts.
  */
 const createTicketInFlight = new Map<string, Promise<{ repair: Repair; created: boolean }>>()
 
 /**
  * Create a repair ticket idempotently.
- * Business rule: an identical report (same asset + same title) is a duplicate
- * only while a matching ticket is still open. If one exists, it is returned
- * with `created: false` instead of inserting a second ticket. Once the prior
- * ticket is RESOLVED/CLOSED, the same title is a legitimate recurring-issue
- * report and a new ticket is created. Final validation still runs in the
- * SECURITY DEFINER RPC; this guard prevents duplicate *operations*, matching
- * the reliability rules (PRD "Prevent duplicate or conflicting operations",
- * TRD "Duplicate ticket creation caused by repeated requests").
+ * Business rule: an identical report (same asset + same title AND same description)
+ * is a true duplicate only while a matching ticket is still open. If one exists,
+ * it is returned with `created: false` instead of inserting a second ticket. Any
+ * other submission — a different title, or the same title describing a different
+ * problem (different description), or a report whose prior ticket is already
+ * RESOLVED/CLOSED — is a legitimate new issue and creates a new ticket. Final
+ * validation still runs in the SECURITY DEFINER RPC; this guard prevents duplicate
+ * *operations*, matching the reliability rules (PRD "Prevent duplicate or
+ * conflicting operations", TRD "Duplicate ticket creation caused by repeated requests").
  */
 export async function createRepairTicket(input: {
   asset_id: string
@@ -130,22 +131,27 @@ export async function createRepairTicket(input: {
   priority: RepairPriority
   due_date?: string | null
 }): Promise<{ repair: Repair; created: boolean }> {
-  const flightKey = `${input.asset_id}|${normalizeTicketTitle(input.title)}`
+  const wantedTitle = normalizeTicketText(input.title)
+  const wantedDescription = normalizeTicketText(input.description)
+  const flightKey = `${input.asset_id}|${wantedTitle}|${wantedDescription}`
   const pending = createTicketInFlight.get(flightKey)
   if (pending) return pending
 
   const attempt = (async (): Promise<{ repair: Repair; created: boolean }> => {
-    // Duplicate detection: existing open ticket for this asset with the same title.
+    // Duplicate detection: existing open ticket for this asset reporting the exact
+    // same issue (same title AND same description). Title alone is not enough — two
+    // different faults can share a short title, and those must stay separate tickets.
     const { data: openRows, error: openError } = await supabase
       .from('repairs')
       .select(REPAIR_SELECT)
       .eq('asset_id', input.asset_id)
       .not('status', 'in', '("RESOLVED","CLOSED")')
       .order('created_at', { ascending: false })
-      .limit(50)
+      .limit(100)
     if (!openError && openRows) {
-      const wanted = normalizeTicketTitle(input.title)
-      const existing = (openRows as unknown as Repair[]).find((r) => normalizeTicketTitle(r.title) === wanted)
+      const existing = (openRows as unknown as Repair[]).find(
+        (r) => normalizeTicketText(r.title) === wantedTitle && normalizeTicketText(r.description ?? '') === wantedDescription,
+      )
       if (existing) return { repair: existing, created: false }
     }
 

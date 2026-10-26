@@ -386,3 +386,54 @@ FIXED and VERIFIED LOCALLY for the duplicate-submission flow (single shared fix;
 4. The `created:true` (first-time creation) path was not exercised live (existing open duplicate intercepted the verification submit, which was intentional to avoid polluting demo data); covered by typecheck/build and unchanged RPC logic, but re-run the E2E suite after deploy to confirm end-to-end.
 5. Changes are uncommitted; production verification of all six scenarios is pending deploy.
 
+---
+
+## Entry 10 — 2026-10-26: E2E follow-up — refine duplicate rule to title+description, no silent success, My Issues RESOLVED consistency, notification read-state, profile auto-onboarding
+
+### Problem (second automated E2E run — 6 findings, builds on Entry 9)
+1. `Create a repair ticket for an assigned asset`: submission blocked as a duplicate but the pointed-to ticket's description did not match what was typed.
+2. `Employee creates a repair ticket for an assigned asset`: a genuinely new issue was NOT created as a distinct ticket — reused an existing open ticket (RD-1025).
+3. `Handle repair submission errors gracefully`: a submission the test expected to fail surfaced no visible error and looked recorded as an open issue (silent success).
+4. `Review repeated failure indicators`: Repair History showed LAP-018 repeatedly; RESOLVED summary read 2 while the filtered list read 0 requests / "No issues found".
+5. `Open notifications and mark a message as read`: unread count dropped to 0 after "Mark All As Read" but the read message could not be confirmed in the read inbox (inbox appeared empty).
+6. `Review relevant repair history for an assigned asset`: employee dashboard stuck on "No Application Profile" — authenticated but not onboarded to an org (flagged Environment).
+
+### Exact root causes
+1. **Duplicate rule too coarse (title-only).** Entry 9's `createRepairTicket()` matched open tickets on normalized TITLE alone, so a different problem that shared a short title (or a same-title report whose prior ticket differed) was swallowed and the *existing* ticket (different description) was returned — hence the description mismatch and the missing new ticket. Verified live in DB: Jordan's LAP-018/MOB-011 had ~20 accumulated OPEN tickets with near-identical titles from repeated runs (RD-1006…RD-1032).
+2. **Duplicate shown as SUCCESS.** `ReportIssueModal` rendered the duplicate `notice` via the green `FormSuccess` banner, which reads as a successful create — the "silent success" the test flagged. Real RPC/validation errors were already surfaced via inline `FormError`.
+3. **Summary vs list grouping mismatch (My Issues).** The RESOLVED KPI card counted `['RESOLVED','CLOSED']` (grouped = 2), but the status chips filtered on EXACT `r.status === filter`; clicking RESOLVED returned 0 because the two completed LAP-018 records (RD-1001, RD-1004) are CLOSED, not RESOLVED → summary 2 vs list 0.
+4. **Read transition not observable + navigation side-effect.** The notification row `onClick` marked it read AND immediately `openRelated()` navigated away, so the tester never saw the item settle in the read inbox; there was no per-row mark-as-read control and no visible Read state.
+5. **Profile gap for authenticated-but-unprovisioned accounts.** The signup DB trigger `handle_new_auth_user` provisions NEW auth users, but an account that exists without a `public.users` row (created outside the trigger, or a post-signup race) fell to the `RequireAuth` `!user` "No Application Profile" wall — no self-heal path.
+
+### Business rule (updated)
+A submission is a TRUE duplicate only when the same asset + normalized TITLE **and** normalized DESCRIPTION all match an OPEN ticket (status not RESOLVED/CLOSED). Same title with a different description = a distinct issue → new ticket. Recurring reports after RESOLVED/CLOSED still create new tickets. This supersedes Entry 9's "same asset + same title" duplicate key.
+
+### Files changed
+1. `src/services/repairService.ts` — `normalizeTicketTitle`→`normalizeTicketText`; in-flight key is now `asset_id|normTitle|normDescription`; open-ticket pre-check (limit raised 50→100) matches on title **AND** description before returning `{created:false}`. Return shape, RPC delegation, and fail-open-on-read-error unchanged.
+2. `src/components/ui/primitives.tsx` — NEW `FormWarning` (amber `bg-signal-orange`) for prevented/blocked actions that are NOT a successful create.
+3. `src/pages/employee/Dashboard.tsx` — `ReportIssueModal`: duplicate path now renders via `FormWarning` naming the exact matching ticket (`#RD-xxxx "title"` + "edit title or description to report a different problem"); removed the now-unused `FormSuccess` import. Real errors still inline `FormError`; success still closes modal.
+4. `src/mcp/tools.ts` — `create_repair_ticket` description + duplicate message updated to the title+description rule; `requireUser()` now falls back to `ensure_current_profile` RPC instead of throwing on a missing profile (execute-time RBAC/RLS unchanged).
+5. `src/pages/employee/MyIssues.tsx` — chips list `OPEN_STATUSES`→`STATUS_CHIPS` (dropped separate CLOSED chip); added `statusMatches(r, filter)` so the RESOLVED chip groups RESOLVED+CLOSED exactly like the KPI; each chip now shows a live count; filtered list uses `statusMatches`. Summary and list counts always agree.
+6. `src/hooks/useAsyncData.ts` — added `setData(updater)` to the returned API for optimistic local updates without a full refetch.
+7. `src/pages/shared/Notifications.tsx` — per-row **Mark as Read** button + visible **Read**/Unread badge; row body now only navigates on the linked-repair/asset strip (marking no longer navigates away); `markAllRead`/`markOneRead` optimistically flip local `is_read` (so the item stays visible in All/Read) and each handler has try/catch with an inline `ErrorState` (`actionError`) + retry; `clearRead` guarded too. Read notifications remain in the All/Read view.
+8. Database (Supabase project `puaobtjdcnlxixplpqjx`, migration `add_ensure_current_profile_rpc`) — NEW `public.ensure_current_profile()` SECURITY DEFINER RPC (search_path public/auth): returns the caller's existing profile, else provisions them into the `RepairDesk HQ` org as EMPLOYEE (mirrors `handle_new_auth_user`), raising `NO_ORGANIZATION` if no default org; `REVOKE ... FROM PUBLIC` + `GRANT EXECUTE TO authenticated`. Consumed by `authService.loadCurrentUser` and WebMCP `requireUser`.
+9. `dist/*` — rebuilt via `npm run build`.
+10. `memory.md` — this appended entry (no prior entries modified/deleted).
+
+### Long-standing instruction adopted
+The user asked that `memory.md` be updated on EVERY change going forward. Treat this file as the permanent, append-only change log: after any code, config, or DB change, append a new dated Entry (problem, root cause, files changed, verification, status) before ending the task.
+
+### Verification
+- `npx tsc -p tsconfig.app.json --noEmit` clean.
+- `npm run build` (`tsc -b && vite build`) passes — 109 modules transformed, EXITCODE=0, dist regenerated (mcp + main bundles built).
+- DB read-only queries confirmed live state driving the diagnosis: only 2 completed repairs both CLOSED (RD-1001 LAP-018, RD-1004 MOB-011); Jordan has ~20 OPEN tickets with overlapping titles; all 6 demo users have org + auth.users rows; existing trigger/policies inspected before writing the new RPC.
+
+### Not done / remaining
+1. Pre-existing OPEN duplicate/near-duplicate tickets (RD-1006…RD-1032) remain in the DB; the refined guard prevents NEW same-title+description duplicates but does not clean history. A cleanup pass and/or partial unique index on `(asset_id, lower(title), lower(description)) WHERE status NOT IN ('RESOLVED','CLOSED')` is the recommended durable follow-up.
+2. No live re-run of the 6 E2E scenarios in a WebMCP-enabled Chrome in this session (typecheck + production build only); re-run the suite after deploy to confirm each flow end-to-end.
+3. Changes are uncommitted; Vercel auto-deploy from Git is pending commit/push.
+
+### Final status
+CODE + DB changes COMPLETE and BUILD-VERIFIED. Duplicate detection tightened to title+description (distinct issues now create distinct tickets; duplicates named explicitly and shown as a warning, not success); My Issues summary/list counts consistent; notification read-state observable and preserved; authenticated-but-unprovisioned accounts auto-onboarded via `ensure_current_profile`. Production E2E re-verification pending deploy.
+
+

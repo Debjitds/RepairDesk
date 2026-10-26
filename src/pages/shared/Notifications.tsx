@@ -38,6 +38,7 @@ export default function NotificationsPage() {
   const [filter, setFilter] = useState<'ALL' | 'UNREAD' | 'READ'>('ALL')
   const [typeFilter, setTypeFilter] = useState('ALL')
   const [search, setSearch] = useState('')
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const q = useAsyncData<Notification[]>(() => fetchNotifications(), [])
   const notifications = q.data ?? []
@@ -70,18 +71,39 @@ export default function NotificationsPage() {
   }, [notifications])
 
   async function markAllRead() {
-    await markNotificationsRead(null)
-    q.refresh()
+    setActionError(null)
+    try {
+      // Optimistically flip local state so the read transition is visible immediately
+      // (and stays in the All/Read inbox) even before the refetch settles.
+      q.setData((prev) => (prev ?? []).map((n) => ({ ...n, is_read: true })))
+      await markNotificationsRead(null)
+      q.refresh()
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Failed to mark notifications as read')
+      q.refresh()
+    }
   }
 
   async function markOneRead(id: string) {
-    await markNotificationsRead([id])
-    q.refresh()
+    setActionError(null)
+    try {
+      q.setData((prev) => (prev ?? []).map((n) => (n.id === id ? { ...n, is_read: true } : n)))
+      await markNotificationsRead([id])
+      q.refresh()
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Failed to mark notification as read')
+      q.refresh()
+    }
   }
 
   async function clearRead() {
-    await clearReadNotifications()
-    q.refresh()
+    setActionError(null)
+    try {
+      await clearReadNotifications()
+      q.refresh()
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Failed to clear read notifications')
+    }
   }
 
   function openRelated(n: Notification) {
@@ -185,6 +207,11 @@ export default function NotificationsPage() {
           </span>
         </div>
         <div className="divide-y-2 divide-primary">
+          {actionError && (
+            <div className="p-stack-md">
+              <ErrorState message={actionError} onRetry={q.refresh} />
+            </div>
+          )}
           {q.loading ? (
             <div className="p-stack-md">
               <LoadingState rows={3} />
@@ -207,11 +234,7 @@ export default function NotificationsPage() {
               return (
                 <div
                   key={n.id}
-                  className={`p-stack-md transition-colors flex flex-col gap-3 cursor-pointer ${n.is_read ? 'hover:bg-surface-container-highest' : 'bg-surface-container-low/60 hover:bg-surface-container-highest'}`}
-                  onClick={() => {
-                    if (!n.is_read) void markOneRead(n.id)
-                    openRelated(n)
-                  }}
+                  className={`p-stack-md transition-colors flex flex-col gap-3 ${n.is_read ? 'hover:bg-surface-container-highest' : 'bg-surface-container-low/60 hover:bg-surface-container-highest'}`}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -221,22 +244,39 @@ export default function NotificationsPage() {
                         <Icon name={meta.icon} className="text-[14px]" />
                         {meta.label}
                       </span>
-                      {!n.is_read && (
+                      {n.is_read ? (
+                        <span className="bg-surface-container-highest text-on-surface-variant px-1.5 py-0.5 font-label-caps text-[9px] uppercase border border-primary font-bold">
+                          Read
+                        </span>
+                      ) : (
                         <span className="bg-tertiary-fixed text-on-tertiary-fixed px-1.5 py-0.5 font-label-caps text-[9px] uppercase border border-primary font-bold">
                           Unread
                         </span>
                       )}
                     </div>
-                    <span className="font-mono-label text-[11px] text-on-surface-variant font-bold">
-                      {formatRelative(n.created_at)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {!n.is_read && (
+                        <button
+                          onClick={() => void markOneRead(n.id)}
+                          className="bg-white text-black border-2 border-primary font-label-caps text-[10px] uppercase font-bold px-2 py-1 hover:bg-tertiary-fixed flex items-center gap-1"
+                        >
+                          <Icon name="done_all" className="text-[14px]" /> Mark as Read
+                        </button>
+                      )}
+                      <span className="font-mono-label text-[11px] text-on-surface-variant font-bold">
+                        {formatRelative(n.created_at)}
+                      </span>
+                    </div>
                   </div>
                   <div>
                     <h3 className="font-headline-md text-[16px] font-bold text-primary">{n.title}</h3>
                     <p className="font-body-md text-[13px] text-on-surface-variant mt-1">{n.message}</p>
                   </div>
                   {(n.related_repair || n.related_asset) && (
-                    <div className="flex flex-wrap items-center gap-2 font-mono-label text-[11px] text-on-surface-variant bg-surface p-2 border border-primary/30">
+                    <div
+                      className="flex flex-wrap items-center gap-2 font-mono-label text-[11px] text-on-surface-variant bg-surface p-2 border border-primary/30 cursor-pointer"
+                      onClick={() => openRelated(n)}
+                    >
                       {n.related_repair && (
                         <span>
                           Ticket: <strong className="text-primary">#{n.related_repair.ticket_number}</strong>
