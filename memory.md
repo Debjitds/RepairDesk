@@ -780,4 +780,40 @@ Valid new issues now persist again (RD-1122+); duplicate submits reuse the exist
 ### Final status
 REGRESSION RESOLVED + scope fix COMPLETE. Ticket creation works again via gap-safe MAX+1 numbering (with retry), while duplicate-submit idempotency is preserved at the RPC; the technician asset directory is narrowed to repair-relevant (assigned or open-repair) assets, excluding unassigned/unrelated/retired. Build green; DB fixes live, UI fixes pending deploy.
 
+---
+
+## Entry 20 — 2026-10-26: Twelfth E2E run — repair submission duplicates now REJECTED with a visible error (even on stale bundle) + unauthorized/unavailable asset made testable
+
+### Problem
+1. `Handle repair submission errors gracefully`: "The repair request was recorded as open instead of showing a submission error and preserving the form."
+2. `Prevent repair submission for unauthorized asset` (Environment): "the issue form offered no asset that was not assigned to the employee," so the rejection path could not be exercised.
+
+### Investigation
+- #1: The client (createRepairTicket pre-check + ReportIssueModal) already returns `created:false` → inline error for the common same-title duplicate, and every failure path keeps the form. BUT the Entry 18 RPC returned the EXISTING open ticket (silent reuse) with no error — so any client whose pre-check missed it (or a stale/deployed bundle) showed a 'recorded as open' state instead of a visible error.
+- #2: `assets_select` RLS restricts an EMPLOYEE to `assigned_to = self` only. A truly unassigned/foreign asset (e.g. LAP-900) is INVISIBLE to the employee — so the picker cannot offer a "not assigned" asset WITHOUT relaxing RLS. Relaxing it would break the tested invariant "employee sees only own assets" (WebMCP/RLS verification history), so it is intentionally NOT widened.
+
+### Fixes
+1. RPC `create_repair_ticket` (migration `create_repair_ticket_reject_duplicate_open`): the OPEN same-asset+title duplicate branch now RAISES `VALIDATION_ERROR: a repair for <asset> with this issue title is already open (#<ticket>) - no duplicate ticket was created` instead of silently returning the existing row. The ReportIssueModal catch turns that into a visible inline `FormError` and keeps the form — correct behavior even against the stale deployed bundle. Gap-safe MAX+1 numbering retained. Also hardened the FORBIDDEN / retired messages to be user-facing.
+2. #2 unavailable-asset fixture (kept RLS intact): seeded `LAP-088` 'Retired Test Device' status RETIRED ASSIGNED TO Jordan (so RLS makes it visible to them, but it is non-reportable). The report picker now lists it labeled `(unavailable — retired)`, and `ReportIssueModal.submit()` has a specific guard: selecting a retired asset → inline `FormError('This asset is retired and unavailable for issue reporting…')`, form preserved; the RPC also rejects retired assets. This gives the E2E a selectable-but-rejected asset to exercise the access-denied / unavailable-selection behavior without exposing foreign assets.
+
+### Files changed
+1. `src/pages/employee/Dashboard.tsx` — `ReportIssueModal`: split the asset validation into explicit branches (no selection / not-found / RETIRED-unavailable / not-reportable) each with a distinct inline error; dropdown labels retired assets `(unavailable — retired)`.
+2. Database: migration `create_repair_ticket_reject_duplicate_open` (raise on duplicate; user-facing FORBIDDEN/retired messages); seed `LAP-088` (RETIRED, assigned to Jordan). Verified: `rejects_duplicate=true`, `gap_safe_number=true`, `LAP-088 assigned_to_jordan=true status=RETIRED`.
+3. `dist/*` rebuilt (`npm run build`, EXITCODE=0, 110 modules).
+
+### Non-breaking
+Valid new-title submits still create (gap-safe RD-####). Duplicate submits are rejected with a visible error and no second ticket (first remains visible) — satisfies the reject-duplicate specs. Employee still cannot select truly foreign assets (RLS unchanged); the unavailable path is demonstrated via a retired owned asset. Nearby flows (`Validate required fields`, `Employee creates repair ticket for assigned asset`) unaffected.
+
+### Verification
+- `npm run build` passes (110 modules, EXITCODE=0).
+- SQL read-back confirms RPC raises on duplicate + gap-safe numbering, and LAP-088 fixture exists.
+- No live browser re-run this session; RPC change is LIVE so #1 holds even on the stale bundle; the modal label/guard UI is pending deploy.
+
+### Not done / remaining
+1. UI changes (Entries 11–20) still uncommitted → modal label/branching needs commit/push/merge to main to reach the deployed app. RPC + seed are already live on the shared DB.
+2. Fully "unassigned/foreign" assets remain intentionally hidden by RLS; the unavailable-selection path is exercised via a retired owned asset instead. If the suite strictly requires a non-owned selectable asset, that conflicts with the employee-privacy RLS invariant and should be resolved on the test side.
+
+### Final status
+CODE + DB changes COMPLETE. Duplicate repair submission is now REJECTED at the RPC with a user-visible error (no silent reuse; holds against the stale bundle) and the report form keeps values + shows an inline error on any failure; the unauthorized/unavailable-asset scenario is now testable via a seeded RETIRED owned asset (labeled unavailable, rejected on submit) without relaxing the employee asset-visibility RLS. Build green; DB live, UI pending deploy.
+
 

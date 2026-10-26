@@ -350,8 +350,21 @@ export function ReportIssueModal({
     setError(null)
     // Frontend validation — a failed/invalid submission must render an inline error
     // and never transition to an open ticket.
-    if (!assetId || !reportableAssets.some((a) => a.id === assetId)) {
+    if (!assetId) {
+      setError('Select the asset with the problem.')
+      return
+    }
+    const chosen = assets.find((a) => a.id === assetId)
+    if (!chosen) {
       setError('Select one of your assigned assets.')
+      return
+    }
+    if (chosen.status === 'RETIRED') {
+      setError('This asset is retired and unavailable for issue reporting. Please choose an active asset.')
+      return
+    }
+    if (!reportableAssets.some((a) => a.id === assetId)) {
+      setError('This asset is not available for issue reporting.')
       return
     }
     const cleanTitle = title.trim()
@@ -451,6 +464,7 @@ export function ReportIssueModal({
               {assets.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.asset_tag} — {a.name}
+                  {a.status === 'RETIRED' ? ' (unavailable — retired)' : ''}
                 </option>
               ))}
             </select>
