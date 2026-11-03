@@ -100,22 +100,72 @@ export async function fetchAssetRepairHistory(assetId: string): Promise<Repair[]
 
 // ---------- Mutations (all flow through backend RPC business logic) ----------
 
+/** Text normalization used for duplicate detection (trim, collapse spaces, case-insensitive). */
+function normalizeTicketText(text: string): string {
+  return text.trim().toLowerCase().replace(/\s+/g, ' ')
+}
+
+/**
+ * In-flight create calls keyed by asset + normalized title.
+ * Simultaneous submissions of the same request (double-click, agent retry,
+ * e2e repeat) share one network call instead of racing two inserts.
+ */
+const createTicketInFlight = new Map<string, Promise<{ repair: Repair; created: boolean }>>()
+
+/**
+ * Create a repair ticket idempotently.
+ * Business rule (PRD "Prevent duplicate or conflicting operations", TRD "Duplicate
+ * ticket creation caused by repeated requests"): an report is a DUPLICATE when the
+ * same asset already has an OPEN ticket with the same normalized title. The title is
+ * the issue identifier users see, so re-submitting the same issue title — even with
+ * slightly different description wording — reuses the existing open ticket (returned
+ * with `created:false`) instead of opening a second one. Once the prior ticket is
+ * RESOLVED/CLOSED, the same title is a legitimate recurring-issue report and a new
+ * ticket is created. Final validation still runs in the SECURITY DEFINER RPC; this
+ * guard prevents duplicate *operations*.
+ */
 export async function createRepairTicket(input: {
   asset_id: string
   title: string
   description: string
   priority: RepairPriority
   due_date?: string | null
-}): Promise<Repair> {
-  const { data, error } = await supabase.rpc('create_repair_ticket', {
-    p_asset_id: input.asset_id,
-    p_title: input.title,
-    p_description: input.description,
-    p_priority: input.priority,
-    p_due_date: input.due_date ?? null,
-  })
-  if (error) throw new Error(rpcErrorMessage(error))
-  return data as unknown as Repair
+}): Promise<{ repair: Repair; created: boolean }> {
+  const wantedTitle = normalizeTicketText(input.title)
+  const flightKey = `${input.asset_id}|${wantedTitle}`
+  const pending = createTicketInFlight.get(flightKey)
+  if (pending) return pending
+
+  const attempt = (async (): Promise<{ repair: Repair; created: boolean }> => {
+    // One open repair per asset: if this asset already has ANY open ticket, reuse it
+    // (created:false) instead of opening a second one — regardless of title. This
+    // mirrors the create_repair_ticket RPC guard so an employee cannot pile up
+    // multiple open tickets for the same asset. A new ticket is allowed only once the
+    // existing one is RESOLVED/CLOSED.
+    const { data: openRows, error: openError } = await supabase
+      .from('repairs')
+      .select(REPAIR_SELECT)
+      .eq('asset_id', input.asset_id)
+      .not('status', 'in', '("RESOLVED","CLOSED")')
+      .order('created_at', { ascending: true })
+      .limit(1)
+    if (!openError && openRows && openRows.length > 0) {
+      return { repair: (openRows as unknown as Repair[])[0], created: false }
+    }
+
+    const { data, error } = await supabase.rpc('create_repair_ticket', {
+      p_asset_id: input.asset_id,
+      p_title: input.title,
+      p_description: input.description,
+      p_priority: input.priority,
+      p_due_date: input.due_date ?? null,
+    })
+    if (error) throw new Error(rpcErrorMessage(error))
+    return { repair: data as unknown as Repair, created: true }
+  })().finally(() => createTicketInFlight.delete(flightKey))
+
+  createTicketInFlight.set(flightKey, attempt)
+  return attempt
 }
 
 export async function assignTechnician(repairId: string, technicianId: string): Promise<Repair> {

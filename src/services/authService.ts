@@ -19,7 +19,15 @@ export async function loadCurrentUser(): Promise<User | null> {
     .maybeSingle()
 
   if (error) throw error
-  return (data as User) ?? null
+  if (data) return data as User
+
+  // Authenticated in Supabase but no application profile yet (e.g. an account
+  // provisioned outside the signup trigger, or a race right after signup). Ask
+  // the backend to onboard the caller into the default organization so they are
+  // not stranded on the "No Application Profile" screen.
+  const { data: ensured, error: ensureError } = await supabase.rpc('ensure_current_profile')
+  if (ensureError) throw ensureError
+  return (ensured as User) ?? null
 }
 
 export async function signIn(email: string, password: string) {

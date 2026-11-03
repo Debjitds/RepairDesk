@@ -54,8 +54,15 @@ async function requireUser(): Promise<User> {
     .eq('auth_user_id', user.id)
     .maybeSingle()
   if (perr) throw perr
-  if (!profile) throw new Error('UNAUTHENTICATED: No RepairDesk application profile for this session.')
-  return profile as unknown as User
+  if (profile) return profile as unknown as User
+
+  // Authenticated session without a profile: onboard via the same RPC the web
+  // app uses, so agent tool calls don't fail on the "No Application Profile"
+  // state for an otherwise valid account.
+  const { data: ensured, error: eerr } = await supabase.rpc('ensure_current_profile')
+  if (eerr) throw eerr
+  if (!ensured) throw new Error('UNAUTHENTICATED: No RepairDesk application profile for this session.')
+  return ensured as unknown as User
 }
 
 async function logExecution(tool: string, input: unknown, result: unknown, err: string | null, started: number) {
@@ -273,7 +280,7 @@ export const TOOLS: McpTool[] = [
   {
     name: 'create_repair_ticket',
     description:
-      'Report a new repair ticket (status OPEN). Only EMPLOYEE users may create repair tickets, and only for assets assigned to them. ADMIN/MANAGER manage and assign repairs; TECHNICIANs work on assigned repairs.',
+      'Report a new repair ticket (status OPEN). Only EMPLOYEE users may create repair tickets, and only for assets assigned to them. ADMIN/MANAGER manage and assign repairs; TECHNICIANs work on assigned repairs. One open repair per asset: if the asset already has an OPEN ticket, the request is rejected (no second open ticket) until that one is RESOLVED/CLOSED.',
     roles: ['EMPLOYEE'],
     inputSchema: {
       type: 'object',
@@ -287,7 +294,7 @@ export const TOOLS: McpTool[] = [
     },
     async run(input) {
       const asset = await resolveAsset(input.asset)
-      const repair = await createRepairTicket({
+      const { repair, created } = await createRepairTicket({
         asset_id: asset.id,
         title: String(input.title),
         description: String(input.description),
@@ -295,9 +302,12 @@ export const TOOLS: McpTool[] = [
       })
       return {
         success: true,
+        duplicate: !created,
         ticket_number: repair.ticket_number,
         status: repair.status,
-        message: `Ticket ${repair.ticket_number} created for ${asset.asset_tag} (OPEN).`,
+        message: created
+          ? `Ticket ${repair.ticket_number} created for ${asset.asset_tag} (OPEN).`
+          : `Blocked: ${asset.asset_tag} already has an open ticket ${repair.ticket_number}. You cannot report another issue for this asset until it is resolved. No new ticket was created.`,
       }
     },
   },

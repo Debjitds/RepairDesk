@@ -9,6 +9,8 @@ export interface AssetFilters {
   location?: string
   warranty?: string
   assigned?: 'ALL' | 'Assigned' | 'Unassigned'
+  /** Operational views (e.g. technician bench) exclude RETIRED assets entirely. */
+  excludeRetired?: boolean
 }
 
 export const ASSET_SELECT = `
@@ -49,6 +51,7 @@ export async function fetchAssets(filters: AssetFilters = {}): Promise<Asset[]> 
     query = query.or(`asset_tag.ilike.${q},name.ilike.${q},serial_number.ilike.${q}`)
   }
   if (filters.status && filters.status !== 'ALL') query = query.eq('status', filters.status)
+  if (filters.excludeRetired) query = query.neq('status', 'RETIRED')
   if (filters.category && filters.category !== 'ALL') query = query.eq('category', filters.category)
   if (filters.location && filters.location !== 'ALL') query = query.eq('location', filters.location)
   if (filters.assigned === 'Assigned') query = query.not('assigned_to', 'is', null)
@@ -81,6 +84,27 @@ export async function fetchAsset(id: string): Promise<Asset | null> {
     .maybeSingle()
   if (error) throw error
   return data ? shapeAsset(data) : null
+}
+
+export interface ReportingAssetOption {
+  id: string
+  asset_tag: string
+  name: string
+  status: AssetStatus
+  assignable: boolean
+  has_open_repair: boolean
+}
+
+/**
+ * Read-only org-wide catalog for the employee "report an issue" picker. Only assets
+ * assigned to the current user (and not retired) are `assignable`; the rest are shown
+ * so the unauthorized/unavailable selection path can be exercised, but the create RPC
+ * still rejects them (FORBIDDEN / retired). Does not change assets_select RLS.
+ */
+export async function fetchReportingAssetOptions(): Promise<ReportingAssetOption[]> {
+  const { data, error } = await supabase.rpc('reporting_asset_options')
+  if (error) throw error
+  return (data ?? []) as unknown as ReportingAssetOption[]
 }
 
 export async function fetchAssetLocations(): Promise<string[]> {

@@ -38,6 +38,7 @@ const NAV: Record<string, NavItem[]> = {
     { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
     { to: '/my-issues', label: 'My Issues', icon: 'report_problem' },
     { to: '/my-assets', label: 'My Assets', icon: 'precision_manufacturing' },
+    { to: '/repair-history', label: 'Repair History', icon: 'history' },
     { to: '/notifications', label: 'Notifications', icon: 'notifications' },
     { to: '/settings', label: 'Settings', icon: 'settings' },
   ],

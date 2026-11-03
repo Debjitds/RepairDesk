@@ -15,7 +15,7 @@ export function formatDateShort(value: string | null | undefined): string {
 export function formatTime(value: string | null | undefined): string {
   if (!value) return '—'
   const d = new Date(value)
-  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  return isNaN(d.getTime()) ? '—' : d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }
 
 export function formatRelative(value: string | null | undefined): string {

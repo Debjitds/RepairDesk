@@ -11,11 +11,23 @@ import {
   StatusBadge,
   NeoButton,
 } from '@/components/ui/primitives'
-import { formatDate } from '@/lib/format'
+import { formatDate, formatTime } from '@/lib/format'
 import type { Asset, Repair, RepairStatus } from '@/types'
 import { fetchAssets } from '@/services/assetService'
 
-const OPEN_STATUSES: ('ALL' | RepairStatus)[] = ['ALL', 'OPEN', 'ASSIGNED', 'DIAGNOSING', 'IN_REPAIR', 'RESOLVED', 'CLOSED']
+const STATUS_CHIPS: ('ALL' | RepairStatus)[] = ['ALL', 'OPEN', 'ASSIGNED', 'DIAGNOSING', 'IN_REPAIR', 'RESOLVED']
+
+/**
+ * Chip filtering must use the SAME grouping as the summary KPIs. The RESOLVED
+ * summary card counts completed tickets (RESOLVED + CLOSED), so the RESOLVED
+ * filter does too — otherwise the summary could show 2 while the filtered list
+ * showed 0 ("No issues found"), which is the inconsistency we're fixing.
+ */
+function statusMatches(r: Repair, f: 'ALL' | RepairStatus): boolean {
+  if (f === 'ALL') return true
+  if (f === 'RESOLVED') return r.status === 'RESOLVED' || r.status === 'CLOSED'
+  return r.status === f
+}
 
 /** Employee My Issues per Stitch `employee_my_issue.html`. */
 export default function EmployeeMyIssues() {
@@ -29,16 +41,51 @@ export default function EmployeeMyIssues() {
   const assetsQ = useAsyncData<Asset[]>(() => fetchAssets({}), [])
 
   const repairs = q.data ?? []
+
+  // Dedupe the issue list: collapse multiple OPEN tickets that share the same
+  // asset + normalized title into the single newest one. Repeated submissions of
+  // the same issue should not surface as several open requests. RESOLVED/CLOSED
+  // tickets are kept as-is (they are history, and resubmits after completion are
+  // legitimate recurring issues).
+  const uniqueRepairs = useMemo(() => {
+    const seenOpen = new Set<string>()
+    const out: Repair[] = []
+    for (const r of repairs) {
+      // repairs arrive newest-first (fetchRepairs orders created_at desc), so the
+      // first OPEN ticket seen for a title is the current representative.
+      if (['RESOLVED', 'CLOSED'].includes(r.status)) {
+        out.push(r)
+        continue
+      }
+      const key = `${r.asset_id}|${r.title.trim().toLowerCase().replace(/\s+/g, ' ')}`
+      if (seenOpen.has(key)) continue
+      seenOpen.add(key)
+      out.push(r)
+    }
+    return out
+  }, [repairs])
+
+  const term = search.trim().toLowerCase()
   const filtered = useMemo(
-    () => (statusFilter === 'ALL' ? repairs : repairs.filter((r) => r.status === statusFilter)),
-    [repairs, statusFilter],
+    () =>
+      uniqueRepairs.filter(
+        (r) =>
+          statusMatches(r, statusFilter) &&
+          (!term ||
+            r.ticket_number.toLowerCase().includes(term) ||
+            r.title.toLowerCase().includes(term) ||
+            (r.asset?.asset_tag ?? '').toLowerCase().includes(term) ||
+            (r.asset?.name ?? '').toLowerCase().includes(term) ||
+            (r.technician?.full_name ?? '').toLowerCase().includes(term)),
+      ),
+    [uniqueRepairs, statusFilter, term],
   )
 
   const kpi = {
-    open: repairs.filter((r) => !['RESOLVED', 'CLOSED'].includes(r.status)).length,
-    inRepair: repairs.filter((r) => ['DIAGNOSING', 'IN_REPAIR'].includes(r.status)).length,
-    waiting: repairs.filter((r) => ['OPEN', 'ASSIGNED'].includes(r.status)).length,
-    resolved: repairs.filter((r) => ['RESOLVED', 'CLOSED'].includes(r.status)).length,
+    open: uniqueRepairs.filter((r) => !['RESOLVED', 'CLOSED'].includes(r.status)).length,
+    inRepair: uniqueRepairs.filter((r) => ['DIAGNOSING', 'IN_REPAIR'].includes(r.status)).length,
+    waiting: uniqueRepairs.filter((r) => ['OPEN', 'ASSIGNED'].includes(r.status)).length,
+    resolved: uniqueRepairs.filter((r) => ['RESOLVED', 'CLOSED'].includes(r.status)).length,
   }
 
   return (
@@ -97,22 +144,21 @@ export default function EmployeeMyIssues() {
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-mono-label text-xs uppercase text-on-surface-variant font-bold mr-1">STATUS:</span>
-            {OPEN_STATUSES.map((s) => (
+            {STATUS_CHIPS.map((s) => (
               <button
                 key={s}
                 className={`px-3 py-1.5 border-[3px] border-primary font-label-caps text-xs uppercase font-bold ${
                   statusFilter === s
                     ? s === 'IN_REPAIR'
                       ? 'bg-signal-orange text-black'
-                      : s === 'RESOLVED' || s === 'CLOSED'
+                      : s === 'RESOLVED'
                         ? 'bg-electric-yellow text-black'
                         : 'bg-primary text-white'
                     : 'bg-white text-black hover:bg-surface-container-highest'
                 }`}
                 onClick={() => setStatusFilter(s)}
               >
-                {s.replace('_', ' ')}
-                {s === 'ALL' && ` (${repairs.length})`}
+                {s.replace('_', ' ')} ({uniqueRepairs.filter((r) => statusMatches(r, s)).length})
               </button>
             ))}
           </div>
@@ -140,7 +186,7 @@ export default function EmployeeMyIssues() {
                 <EmptyState
                   icon="report_problem"
                   title="No issues found"
-                  hint={repairs.length === 0 ? "You haven't reported any issues yet." : 'Try a different status filter.'}
+                  hint={uniqueRepairs.length === 0 ? "You haven't reported any issues yet." : 'Try a different status filter.'}
                   action={
                     <NeoButton onClick={() => setReportOpen(true)}>
                       <Icon name="add_circle" /> Report an Issue
@@ -152,7 +198,7 @@ export default function EmployeeMyIssues() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-electric-yellow border-b-[3px] border-primary text-black font-label-caps text-label-caps uppercase">
-                    {['Ticket ID', 'Asset', 'Issue', 'Priority', 'Status', 'Technician', 'Date', 'Action'].map((h) => (
+                    {['Ticket ID', 'Asset', 'Issue', 'Priority', 'Status', 'Technician', 'Date', 'Time', 'Action'].map((h) => (
                       <th key={h} className="p-4">
                         {h}
                       </th>
@@ -198,6 +244,7 @@ export default function EmployeeMyIssues() {
                         )}
                       </td>
                       <td className="p-4 font-mono-label text-xs">{formatDate(r.created_at)}</td>
+                      <td className="p-4 font-mono-label text-xs">{formatTime(r.created_at)}</td>
                       <td className="p-4 text-center">
                         <button className="bg-white group-hover:bg-warm-cream group-hover:text-black text-primary px-3 py-1 border-[3px] border-primary font-label-caps text-[11px] uppercase font-bold shadow-brutal-sm">
                           DETAILS

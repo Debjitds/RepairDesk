@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 export function useAsyncData<T>(
   loader: () => Promise<T>,
   deps: unknown[] = [],
-): { data: T | null; loading: boolean; error: string | null; refresh: () => void } {
+): { data: T | null; loading: boolean; error: string | null; refresh: () => void; setData: (updater: T | ((prev: T | null) => T)) => void } {
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -33,7 +33,14 @@ export function useAsyncData<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, tick])
 
-  return { data, loading, error, refresh: () => setTick((t) => t + 1) }
+  return {
+    data,
+    loading,
+    error,
+    refresh: () => setTick((t) => t + 1),
+    // Allow callers to apply an optimistic local update without a full refetch.
+    setData: (updater) => setData((prev) => (typeof updater === 'function' ? (updater as (p: T | null) => T)(prev) : updater)),
+  }
 }
 
 /** Debounced value for search inputs. */
